@@ -435,6 +435,67 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
     const total_preteurs_paiements = preteurs_paiements.reduce((sum, t) => sum + t.montant, 0);
     const total_preteurs_recus = preteurs_recus.reduce((sum, t) => sum + t.montant, 0);
 
+    // SECTION 7B: Regrouper les transactions de prêteurs PAR NOM
+    const preteursGroupes: { [nom: string]: any[] } = {};
+
+    preteurs_transactions.forEach(t => {
+        const details = t.details.toLowerCase();
+
+        // Trouver quel prêteur correspond (extraire le nom réel de la transaction)
+        let preteurNom = 'Autre prêteur';
+
+        // Chercher le premier mot-clé qui match
+        for (const p of PRETEURS_CONNUS) {
+            if (details.includes(p)) {
+                // Extraire le nom réel de la transaction (avant les espaces multiples ou tab)
+                const nomExtrait = t.details.split(/\s{2,}|\t/)[0].trim();
+                preteurNom = nomExtrait;
+                break;
+            }
+        }
+
+        if (!preteursGroupes[preteurNom]) {
+            preteursGroupes[preteurNom] = [];
+        }
+
+        const montant = parseFloat(t.debit || t.credit || '0');
+        const type = t.debit ? 'paiement' : 'recu';
+
+        preteursGroupes[preteurNom].push({
+            date: t.date,
+            details: t.details,
+            debit: t.debit,
+            credit: t.credit,
+            montant: montant,
+            type: type,
+            compte_numero: t.compteInfo.numero,
+            compte_type: t.compteInfo.type,
+            compte_institution: t.compteInfo.institution
+        });
+    });
+
+    // Calculer les totaux par prêteur et trier
+    const preteursResume = Object.keys(preteursGroupes).map(nom => {
+        const transactions = preteursGroupes[nom];
+        const paiements = transactions.filter(t => t.type === 'paiement');
+        const recus = transactions.filter(t => t.type === 'recu');
+        const totalPaiements = paiements.reduce((sum, t) => sum + t.montant, 0);
+        const totalRecus = recus.reduce((sum, t) => sum + t.montant, 0);
+
+        return {
+            nom,
+            count: transactions.length,
+            countPaiements: paiements.length,
+            countRecus: recus.length,
+            transactions: transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+            totalPaiements,
+            totalRecus,
+            netTotal: totalRecus - totalPaiements
+        };
+    }).sort((a, b) => b.count - a.count); // Trier par nombre de transactions (plus actif en premier)
+
+    console.log(`[PRETEURS] ${preteursResume.length} prêteurs distincts détectés`);
+
     // SECTION 8: Catégories de dépenses par période (30 et 90 jours)
     const categoriesMap: { [key: string]: { libelle: string; icone: string; type: 'essentielle' | 'non-essentielle' | 'autre' } } = {
         'bills_and_utilities': { libelle: 'Factures & Services publics', icone: '⚡', type: 'essentielle' },
@@ -567,7 +628,8 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
             recus: preteurs_recus,
             total_paiements: total_preteurs_paiements,
             total_recus: total_preteurs_recus,
-            count_total: preteurs_transactions.length
+            count_total: preteurs_transactions.length,
+            groupes: preteursResume
         },
         categories: categories_depenses,
         toutes_transactions: transactionsParCategorie,

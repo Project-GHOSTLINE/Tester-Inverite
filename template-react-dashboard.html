@@ -178,7 +178,23 @@
 
             // Appliquer le mode regroupement si activé
             const displayedTransactions = regroupMode && selectedCategory
-                ? filteredByAccount.filter(t => isTransactionInCategory(t, selectedCategory))
+                ? (() => {
+                    // Si c'est un prêteur spécifique (preteur_0, preteur_1, etc.)
+                    if (selectedCategory.startsWith('preteur_')) {
+                        const idx = parseInt(selectedCategory.replace('preteur_', ''));
+                        const preteurData = analyse.preteurs?.groupes?.[idx];
+                        if (preteurData) {
+                            // Filtrer par les transactions exactes de ce prêteur
+                            return filteredByAccount.filter(t =>
+                                preteurData.transactions.some(pt =>
+                                    pt.details === t.details && pt.date === t.date
+                                )
+                            );
+                        }
+                    }
+                    // Sinon utiliser la catégorie normale
+                    return filteredByAccount.filter(t => isTransactionInCategory(t, selectedCategory));
+                })()
                 : filteredByAccount;
 
             // Trier les transactions AVANT de calculer les indices
@@ -563,45 +579,109 @@
 
                         {/* 4 Cards horizontales */}
                         <div className="grid grid-cols-4 gap-6 mb-8">
-                            {Object.entries(categories).map(([key, cat]) => {
-                                const stats = getStats(key);
-                                const isSelected = selectedCategory === key;
+                            {Object.entries(categories)
+                                .filter(([key]) => key !== 'preteur') // Exclure la carte générique "preteur"
+                                .map(([key, cat]) => {
+                                    const stats = getStats(key);
+                                    const isSelected = selectedCategory === key;
+
+                                    return (
+                                        <div
+                                            key={key}
+                                            onClick={() => handleCardClick(key)}
+                                            className={`
+                                                ${cat.bgColor}
+                                                rounded-xl p-6 cursor-pointer
+                                                transition-all duration-200
+                                                hover:shadow-2xl hover:-translate-y-1
+                                                border-l-8 ${cat.borderColor}
+                                                ${isSelected ? 'shadow-2xl ring-4 ring-offset-2' : 'shadow-xl'}
+                                            `}
+                                            style={{
+                                                minWidth: '250px',
+                                                borderLeftWidth: '8px',
+                                                borderLeftColor: cat.color,
+                                                ...(isSelected && { ringColor: cat.color })
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div
+                                                    className="w-14 h-14 rounded-full flex items-center justify-center text-white"
+                                                    style={{ backgroundColor: cat.color }}
+                                                >
+                                                    {cat.icon}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
+                                                        {cat.label}
+                                                    </div>
+                                                    <div className="text-3xl font-black mt-1" style={{ color: cat.color }}>
+                                                        {stats.count}
+                                                    </div>
+                                                    <div className="text-lg font-bold mt-1" style={{ color: cat.color }}>
+                                                        {stats.total.toFixed(2)}$
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            }
+
+                            {/* Cartes pour chaque prêteur distinct */}
+                            {analyse.preteurs && analyse.preteurs.groupes && analyse.preteurs.groupes.map((preteur, idx) => {
+                                const preteurKey = `preteur_${idx}`;
+                                const isSelected = selectedCategory === preteurKey;
 
                                 return (
                                     <div
-                                        key={key}
-                                        onClick={() => handleCardClick(key)}
+                                        key={preteurKey}
+                                        onClick={() => {
+                                            setSelectedCategory(isSelected ? null : preteurKey);
+                                            if (!isSelected && preteur.transactions.length > 0) {
+                                                // Trouver l'ID de la première transaction
+                                                const firstTrans = filteredByAccount.find(t =>
+                                                    t.details === preteur.transactions[0].details &&
+                                                    t.date === preteur.transactions[0].date
+                                                );
+                                                if (firstTrans) {
+                                                    setCurrentTransactionId(firstTrans._id);
+                                                }
+                                            } else {
+                                                setCurrentTransactionId(null);
+                                            }
+                                        }}
                                         className={`
-                                            ${cat.bgColor}
+                                            bg-orange-50
                                             rounded-xl p-6 cursor-pointer
                                             transition-all duration-200
                                             hover:shadow-2xl hover:-translate-y-1
-                                            border-l-8 ${cat.borderColor}
-                                            ${isSelected ? 'shadow-2xl ring-4 ring-offset-2' : 'shadow-xl'}
+                                            border-l-8 border-l-orange-500
+                                            ${isSelected ? 'shadow-2xl ring-4 ring-offset-2 ring-orange-500' : 'shadow-xl'}
                                         `}
                                         style={{
                                             minWidth: '250px',
                                             borderLeftWidth: '8px',
-                                            borderLeftColor: cat.color,
-                                            ...(isSelected && { ringColor: cat.color })
+                                            borderLeftColor: '#f97316'
                                         }}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div
                                                 className="w-14 h-14 rounded-full flex items-center justify-center text-white"
-                                                style={{ backgroundColor: cat.color }}
+                                                style={{ backgroundColor: '#f97316' }}
                                             >
-                                                {cat.icon}
+                                                <Briefcase />
                                             </div>
                                             <div className="flex-1">
-                                                <div className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
-                                                    {cat.label}
+                                                <div className="text-xs font-semibold text-orange-600 uppercase tracking-wide truncate" title={preteur.nom}>
+                                                    {preteur.nom.length > 20 ? preteur.nom.substring(0, 20) + '...' : preteur.nom}
                                                 </div>
-                                                <div className="text-3xl font-black mt-1" style={{ color: cat.color }}>
-                                                    {stats.count}
+                                                <div className="text-2xl font-black mt-1 text-orange-600">
+                                                    {preteur.count}
                                                 </div>
-                                                <div className="text-lg font-bold mt-1" style={{ color: cat.color }}>
-                                                    {stats.total.toFixed(2)}$
+                                                <div className="text-sm font-bold mt-1 text-orange-700">
+                                                    {preteur.countPaiements > 0 && <div>💸 -{preteur.totalPaiements.toFixed(2)}$</div>}
+                                                    {preteur.countRecus > 0 && <div>💰 +{preteur.totalRecus.toFixed(2)}$</div>}
                                                 </div>
                                             </div>
                                         </div>
