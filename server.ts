@@ -415,8 +415,15 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
         }))
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    // Pour les prêts reçus, filtrer SEULEMENT VoPay et ZumRails
+    const PRETEURS_RECUS_CIBLES = ['vopay', 'zum rails', 'zumrail'];
+
     const preteurs_recus = preteurs_transactions
-        .filter(t => t.credit && t.credit !== '')
+        .filter(t => {
+            if (!t.credit || t.credit === '') return false;
+            const details = t.details.toLowerCase();
+            return PRETEURS_RECUS_CIBLES.some(p => details.includes(p));
+        })
         .map(t => ({
             date: t.date,
             montant: parseFloat(t.credit || '0'),
