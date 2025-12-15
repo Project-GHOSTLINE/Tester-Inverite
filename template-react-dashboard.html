@@ -100,9 +100,13 @@
                         return transaction.details.toLowerCase().includes('nsf') ||
                                transaction.details.toLowerCase().includes('insuffisance');
                     case 'paie':
-                        return transaction.details.toLowerCase().includes('salaire') ||
-                               transaction.details.toLowerCase().includes('paie') ||
-                               transaction.details.toLowerCase().includes('payroll');
+                        // PAIE = SEULEMENT les CRÉDITS (argent reçu)
+                        const isPaie = transaction.details.toLowerCase().includes('salaire') ||
+                                      transaction.details.toLowerCase().includes('paie') ||
+                                      transaction.details.toLowerCase().includes('payroll') ||
+                                      transaction.category?.toLowerCase().includes('income');
+                        const hasCredit = transaction.credit && transaction.credit !== '';
+                        return isPaie && hasCredit;
                     case 'gambling':
                         return transaction.details.toLowerCase().includes('loonio') ||
                                transaction.details.toLowerCase().includes('payper') ||
