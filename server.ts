@@ -1133,23 +1133,46 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
 
             ${analyse.gambling.transactions.length > 0 ? `
                 <div style="margin-top: 25px;">
-                    <strong style="font-size: 16px; display: block; margin-bottom: 10px; color: #d32f2f;">
-                        🎰 TOUTES LES TRANSACTIONS GAMBLING (${analyse.gambling.transactions.length}):
-                    </strong>
-                    ${analyse.gambling.transactions.map((trans: any, index: number) => `
-                        <div style="padding: 12px; margin: 8px 0; background: #ffebee; border-left: 4px solid #d32f2f;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <strong style="color: #d32f2f;">#${index + 1} - ${trans.date}</strong>
-                                <strong style="color: #d32f2f; font-size: 16px;">${trans.montant.toFixed(2)}$</strong>
+                    <button class="accordion-toggle" data-target="gambling-details" style="
+                        width: 100%;
+                        padding: 14px 20px;
+                        background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+                    ">
+                        <span>🎰 TRANSACTIONS GAMBLING (${analyse.gambling.transactions.length})</span>
+                        <span class="accordion-icon" style="font-size: 20px; transition: transform 0.3s ease;">▼</span>
+                    </button>
+                    <div id="gambling-details" class="accordion-content" style="
+                        max-height: 0;
+                        overflow: hidden;
+                        transition: max-height 0.3s ease-out;
+                        margin-top: 10px;
+                    ">
+                        ${analyse.gambling.transactions.map((trans: any, index: number) => `
+                            <div style="padding: 12px; margin: 8px 0; background: #ffebee; border-left: 4px solid #d32f2f;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <strong style="color: #d32f2f;">#${index + 1} - ${trans.date}</strong>
+                                    <strong style="color: #d32f2f; font-size: 16px;">${trans.montant.toFixed(2)}$</strong>
+                                </div>
+                                <div style="font-size: 12px; color: #666; margin-top: 3px;">
+                                    ${trans.details}
+                                </div>
+                                <div style="font-size: 11px; color: #777; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ffcdd2;">
+                                    💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
+                                </div>
                             </div>
-                            <div style="font-size: 12px; color: #666; margin-top: 3px;">
-                                ${trans.details}
-                            </div>
-                            <div style="font-size: 11px; color: #777; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ffcdd2;">
-                                💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
-                            </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
             ` : ''}
         </div>
@@ -1490,6 +1513,36 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
             if (showExclusionsBtn) {
                 showExclusionsBtn.addEventListener('click', showExclusions);
             }
+
+            // Accordéons
+            const accordionToggles = document.querySelectorAll('.accordion-toggle');
+            accordionToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const content = document.getElementById(targetId);
+                    const icon = this.querySelector('.accordion-icon');
+
+                    if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                        // Fermer
+                        content.style.maxHeight = '0px';
+                        icon.style.transform = 'rotate(0deg)';
+                        this.style.boxShadow = '0 2px 8px rgba(211, 47, 47, 0.3)';
+                    } else {
+                        // Ouvrir
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.style.transform = 'rotate(180deg)';
+                        this.style.boxShadow = '0 4px 12px rgba(211, 47, 47, 0.5)';
+                    }
+                });
+
+                // Hover effect
+                toggle.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                toggle.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
         });
     </script>
 </body>
