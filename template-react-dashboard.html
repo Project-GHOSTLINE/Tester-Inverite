@@ -70,12 +70,21 @@
             const [currentTransactionId, setCurrentTransactionId] = useState(null);
             const [sortColumn, setSortColumn] = useState('date');
             const [sortDirection, setSortDirection] = useState('desc'); // 'asc' ou 'desc'
+            const [selectedAccount, setSelectedAccount] = useState(data.comptes.length > 0 ? data.comptes[0].numero : null);
 
             // Ajouter un ID unique à chaque transaction
             const transactionsWithId = data.transactions.map((t, idx) => ({
                 ...t,
                 _id: idx
             }));
+
+            // Filtrer les transactions par compte sélectionné
+            const filteredByAccount = selectedAccount
+                ? transactionsWithId.filter(t => t.compte_numero === selectedAccount)
+                : transactionsWithId;
+
+            // Trouver les infos du compte sélectionné
+            const currentAccountInfo = data.comptes.find(c => c.numero === selectedAccount) || data.comptes[0];
 
             // Fonction de détection de catégorie (DOIT être avant son utilisation!)
             const isTransactionInCategory = (transaction, category) => {
@@ -141,8 +150,8 @@
                 }
             };
 
-            // Trier les transactions AVANT de calculer les indices
-            const sortedTransactions = [...transactionsWithId].sort((a, b) => {
+            // Trier les transactions AVANT de calculer les indices (utiliser filteredByAccount)
+            const sortedTransactions = [...filteredByAccount].sort((a, b) => {
                 let aVal, bVal;
 
                 switch(sortColumn) {
@@ -232,7 +241,7 @@
             }, [currentTransactionId]);
 
             const getStats = (category) => {
-                const filtered = transactionsWithId.filter(t => isTransactionInCategory(t, category));
+                const filtered = filteredByAccount.filter(t => isTransactionInCategory(t, category));
                 const total = filtered.reduce((sum, t) => {
                     const amount = parseFloat(t.debit || t.credit || 0);
                     return sum + amount;
@@ -319,7 +328,12 @@
                                 Dashboard Transactions IBV
                             </h1>
                             <p className="text-slate-600 text-lg">
-                                {data.client} • {data.transactions.length} transactions
+                                {data.client} • {filteredByAccount.length} transactions
+                                {data.comptes.length > 1 && selectedAccount && (
+                                    <span className="ml-2 text-blue-600">
+                                        (Compte #{selectedAccount})
+                                    </span>
+                                )}
                             </p>
                         </div>
 
@@ -369,6 +383,61 @@
                                 </div>
                             </div>
                         </div>
+
+                        {/* Onglets des comptes */}
+                        {data.comptes.length > 1 && (
+                            <div className="mb-8">
+                                <div className="flex gap-3">
+                                    {data.comptes.map((compte, idx) => (
+                                        <button
+                                            key={compte.numero}
+                                            onClick={() => {
+                                                setSelectedAccount(compte.numero);
+                                                setSelectedCategory(null);
+                                                setCurrentTransactionId(null);
+                                            }}
+                                            className={`
+                                                px-6 py-4 rounded-lg font-bold transition-all duration-200
+                                                ${selectedAccount === compte.numero
+                                                    ? 'bg-blue-600 text-white shadow-xl scale-105'
+                                                    : 'bg-white text-slate-700 shadow-md hover:shadow-lg hover:scale-102'}
+                                            `}
+                                        >
+                                            <div className="text-sm opacity-80">Compte {idx + 1}</div>
+                                            <div className="text-xl font-black">#{compte.numero}</div>
+                                            <div className="text-xs mt-1">{compte.type}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Infos du compte actuel */}
+                        {currentAccountInfo && (
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 mb-8 border-l-8 border-blue-600">
+                                <h3 className="text-xl font-bold text-blue-900 mb-4">
+                                    💳 Compte #{currentAccountInfo.numero} - {currentAccountInfo.type}
+                                </h3>
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div>
+                                        <div className="text-xs text-blue-700 font-semibold mb-1">INSTITUTION</div>
+                                        <div className="text-base font-bold text-blue-900">{currentAccountInfo.institution}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-blue-700 font-semibold mb-1">TRANSIT</div>
+                                        <div className="text-base font-bold text-blue-900">{currentAccountInfo.transit}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-blue-700 font-semibold mb-1">COMPTE</div>
+                                        <div className="text-base font-bold text-blue-900">{currentAccountInfo.account}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-blue-700 font-semibold mb-1">SOLDE ACTUEL</div>
+                                        <div className="text-2xl font-black text-green-600">{currentAccountInfo.balance?.toFixed(2)}$</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* 4 Cards horizontales */}
                         <div className="grid grid-cols-4 gap-6 mb-8">
