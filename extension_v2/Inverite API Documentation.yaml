@@ -1,0 +1,3277 @@
+openapi: 3.0.3
+info:
+  title: Inverite API Documentation
+  version: 1.0.0
+  description: "# Introduction\n        \nFor the purposes of this document, all URLs\
+    \ will reference Sandbox         for merchant integration. These URLs change when\
+    \ moving to the live         environment. Please note, all siteID and bankID values\
+    \ are different        between these two systems. Likewise, a GUID is unique to\
+    \ either         Sandbox, or your Live account.\n        \n# Dashboard Access\
+    \ and Operation        \nYou will receive an email from Merchant Support     \
+    \    <merchantsupport@inverite.com> with a password reset for your sandbox   \
+    \      login which will use the same email that you supplied on the Merchant \
+    \        Request form. If you do not receive it, or the link has expired, you\
+    \         may also reset the password yourself at         https://sandbox.inverite.com/password_reset.\
+    \        \n        \nUnder the Request menu you will have options to Create a\
+    \ new         request and also to view Recent, Active and Search for Requests.\
+    \         You can also download and print PDF versions of the report. We will\
+    \         gladly arrange a screenshare to walk you through the use of        \
+    \ the Dashboard.\n        \n# API Access and Integration        \nThere are two\
+    \ primary integration methods, each recommended for a         different set of\
+    \ circumstances.        \n \\- If you plan on using our dashboard exclusively\
+    \ for reviewing the         customer verification data we suggest the Bank Iframe\
+    \ method as it is         the fastest to set up and requires zero programming\
+    \ beyond one line         of html and a javascript snippet. Jump to         <a\
+    \ href=\"/documentation/#tag/bank-iframe\">Bank iFrame</a>        \n \\- If you\
+    \ intend to receive the customer verification data into a         Loan or Customer\
+    \ Management System we recommend using the standard         Bank API. A request\
+    \ is created from a REST/JSON API call and the         resulting data can either\
+    \ be posted via a Webhook or fetched via a         subsequent API call. Jump to\
+    \         <a href=\"/documentation/#tag/bank\">Bank API</a>        \n        \n\
+    If you aren’t sure, your account manager will be able to assist in         making\
+    \ the right decision.\n        \n# Testing        \nOn both sandbox and production\
+    \ accounts you will have access to our         Test Bank. It is available under\
+    \ the menu for searching financial         institunions and is named Test Bank.\
+    \ You can login with Card Number:         success and Password: success. There\
+    \ are several other accounts you         can use for simulating special conditions\
+    \ that are listed in the API         documents. You are also free to use real\
+    \ FI’s and accounts for         testing purposes. There are no fees associated\
+    \ with the sandbox         environment.\n        \n# Authentication        \n\
+    All API hits require an Authentication Header to be submitted         (\"Auth\"\
+    ), with your merchant key. Again, please note this key         changes between\
+    \ sandbox and live environment. All APIs will respond         in JSON format,\
+    \ with examples included below.        \n<SecurityDefinitions />\n\n        "
+paths:
+  /api/v2/bank/list_available:
+    get:
+      operationId: v2_bank_list_available_retrieve
+      description: 'Returns a list of all the currently available banks including:
+        name, bankID, and any string aliases that might help a user to find the bank
+        in the dropdown list (ie. TD Canada Trust an also be matched as “toronto”
+        because some customers think of it as “Toronto Dominion”).'
+      summary: List available banks
+      tags:
+      - ''
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankViewListAvailableResponse'
+              examples:
+                Example1:
+                  value:
+                    banks:
+                    - bankID: 1
+                      name: TD Canada Trust
+                      aliases:
+                      - toronto
+                      - dominion
+                  summary: Example 1
+          description: ''
+  /api/v2/bank_form/{bankID}:
+    get:
+      operationId: v2_bank_form_retrieve
+      description: Before you can start a request you need to gather the customer’s
+        credentials. In some cases, a branch number will also be required. Use the
+        Bank Form API to get a list of all the fields necessary to start a session.
+        The bankID should be from the list of banks retrieved using the List Available
+        Banks API.
+      summary: Bank Form
+      parameters:
+      - in: path
+        name: bankID
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - ''
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankViewBankFormResponse'
+              examples:
+                Example1:
+                  value:
+                    fields:
+                    - name: username
+                      type: Text
+                      label: Account Number, Card Number, etc
+                    - name: password
+                      type: Password
+                      label: Account Number, Card Number, etc
+                    - name: branch
+                      type: Select
+                      label: Branch
+                      options:
+                      - label: Branch 1
+                        value: '123'
+                      - label: Branch 2
+                        value: '456'
+                  summary: Example 1
+          description: ''
+  /api/v2/bank_pdf_statement/{guid}:
+    get:
+      operationId: v2_bank_pdf_statement_retrieve
+      description: ':param request: Request object'
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/business_sector:
+    post:
+      operationId: v2_business_sector_create
+      description: for merchants only
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/business_sector_status/{task_id}:
+    get:
+      operationId: v2_business_sector_status_retrieve
+      description: requests or merchants
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/create:
+    post:
+      operationId: v2_create_create
+      description: |
+        In order to create a request for either bank or age verification,
+                and optionally send it to your customer via Email or Text, the Create API should be used.
+
+         Depending on your use case, you may choose to send either the “email” or the “username” parameter. Both
+        should not be used. If you wish for Inverite to email the request to your customer directly, please include the
+        email parameter, and the customers valid email address. If you wish to use Inverite anonymously, or not have
+        us dispatch an email, you should use the username parameter. Both cases should be paired with sending a
+        “referenceid” of the customers unique identifier in your own database. As well, dont put 'web' for type
+        parameter since it will prevent email from being sent. This is used to tie multiple requests
+        together for a single customer. We recommend setting a username of “SiteName_(your internal customerID)”
+        for ease of use. The returned request_guid should be stored in your customer database later association of
+        data.
+
+         To create a basic bank verification request, you can include the following parameters: siteID, email,
+        username (if no email provided), firstname, middlename, lastname, referenceid, province, ip, days, type. Please see example on the right hand side.
+
+         To create a basic age verificaiton request, you can include the following parameters: siteID, email,
+        username (if no email provided), firstname, middlename, lastname, referenceid. Please see example on the right hand side.
+      summary: Create request
+      tags:
+      - bank
+      - age
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Create'
+            examples:
+              BankVerification:
+                value:
+                  siteID: '9'
+                  email: test@inverite.com
+                  firstname: First
+                  middlename: M.
+                  lastname: Last
+                  referenceid: '123456'
+                  ip: 123.123.123.123
+                  type: web
+                  days: '60'
+                summary: Bank Verification
+              AgeVerification:
+                value:
+                  siteID: '8'
+                  email: test@inverite.com
+                  firstname: First
+                  middlename: M.
+                  lastname: Last
+                  referenceid: '123456'
+                summary: Age Verification
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Create'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Create'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateViewResponse'
+              examples:
+                BankVerification:
+                  value:
+                    siteID: '9'
+                    email: test@inverite.com
+                    firstname: First
+                    middlename: M.
+                    lastname: Last
+                    referenceid: '123456'
+                    ip: 123.123.123.123
+                    type: web
+                    days: '60'
+                  summary: Bank Verification
+                AgeVerification:
+                  value:
+                    siteID: '8'
+                    email: test@inverite.com
+                    firstname: First
+                    middlename: M.
+                    lastname: Last
+                    referenceid: '123456'
+                  summary: Age Verification
+          description: ''
+  /api/v2/fetch/{guid}:
+    get:
+      operationId: v2_fetch_retrieve
+      description: After a request is completed, you will use the Fetch API to return
+        the full dataset.
+      summary: Get request data
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      tags:
+      - bank
+      - age
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchResponse'
+              examples:
+                BankVerification:
+                  value:
+                    name: John Doe
+                    complete_datetime: '2021-02-09 14:26:55'
+                    referenceid: null
+                    request: 06C04AF4-BC85-4BE8-9CFA-E31CF03C3F60
+                    status: Verified
+                    type: bankverify
+                    accounts:
+                    - type: chequing
+                      membership_number: '1231231'
+                      account_description: Everyday cheq
+                      institution: '010'
+                      account: '1234567'
+                      routing_code: ''
+                      transit: '12345'
+                      bank_pdf_statements:
+                      - name: pdf1
+                        link: https://www.inverite.com
+                      statistics:
+                        key1: string1
+                        key2:
+                          key3: string2
+                      bank: Test Bank
+                      transactions:
+                      - date: '2021-02-09'
+                        details: Branch Transaction EFT DEBIT REVERSAL A. FARBER PARTNERS
+                          LTD
+                        category: fees_and_charges/bankruptcy
+                        credit: '125.00'
+                        debit: ''
+                        flags:
+                        - is_bankruptcy_trustee
+                        - is_return
+                        balance: '92.53'
+                      payschedules:
+                      - score: 1
+                        account: 010-12345-1234567
+                        details: Payroll ACME JOB CO
+                        income_type: monthly_income/paycheck
+                        monthly_income: '1899.72'
+                        frequency: bi_weekly:parity_0:tuesday
+                        payments:
+                        - date: '2021-02-09'
+                          details: Payroll ACME JOB CO
+                          category: ''
+                          credit: '863.92'
+                          debit: ''
+                          flags:
+                          - is_payroll
+                          balance: '865.82'
+                        future_payments:
+                        - '2021-02-23'
+                        - '2021-03-09'
+                        missed_payments: []
+                    all_bank_pdf_statements:
+                    - name: pdf1
+                      link: https://www.inverite.com
+                    address: 1234 Main Street, Vancouver, V7L1G9
+                    contacts:
+                    - type: email
+                      contact: johndoe@gmail.com
+                    - type: phone
+                      contact: (604) 555-1234
+                    account_validations:
+                    - type: name_match
+                      result: PASS
+                      confidence: 1.0
+                      details: Exact match for John Doe.
+                  summary: Bank Verification
+                AgeVerification:
+                  value:
+                    request: 9633F964-513E-11E7-A970-6EC618044181
+                    referenceid: Customer_123456
+                    status: Approved
+                    firstname: Example
+                    middlename: Middle
+                    lastname: Name
+                    birthdate: '1992-05-06'
+                    similarity: 89
+                    city: Vancouver
+                    address: 1234 Main Street
+                    province: BC
+                    postal: A1A 1A1
+                    calculated_age: '25'
+                    gender: M
+                  summary: Age Verification
+                AgeVerification(withLivenessCheck):
+                  value:
+                    request: 9633F964-513E-11E7-A970-6EC618044181
+                    referenceid: Customer_123456
+                    status: Approved
+                    firstname: Example
+                    middlename: Middle
+                    lastname: Name
+                    birthdate: '1992-05-06'
+                    similarity: 89
+                    city: Vancouver
+                    address: 1234 Main Street
+                    province: BC
+                    postal: A1A 1A1
+                    calculated_age: '25'
+                    gender: M
+                    liveness_check:
+                      fraud_check: Pass
+                      liveness_confidence: 78
+                  summary: Age Verification (with liveness check)
+          description: ''
+  /api/v2/id_verify/{guid}/face_liveness/:
+    get:
+      operationId: v2_id_verify_face_liveness_retrieve
+      description: Create a new face liveness session if liveness has not already
+        completed for this IDV request.
+      summary: Create face liveness session
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Fa-f0-9-]{36}$
+        required: true
+      tags:
+      - ID Verification
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IDVCreateLivenessResp'
+          description: ''
+  /api/v2/id_verify/{guid}/face_liveness_complete/:
+    post:
+      operationId: v2_id_verify_face_liveness_complete_create
+      description: API Endpoint to notify that a face liveness session is complete.
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Fa-f0-9-]{36}$
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/id_verify/{guid}/submit/:
+    post:
+      operationId: v2_id_verify_submit_create
+      description: for merchants only
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Fa-f0-9-]{36}$
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/id_verify/{guid}/upload_file/P{image_type}./:
+    post:
+      operationId: v2_id_verify_upload_file_P._create
+      description: 'Upload an image for processing: ID Front or back.'
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Fa-f0-9-]{36}$
+        required: true
+      - in: path
+        name: image_type
+        schema:
+          type: string
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/image_status/{task_id}/{image_type}/:
+    get:
+      operationId: v2_image_status_retrieve
+      description: |-
+        While an image upload session is in progress you will use the Image Status API to monitor its progress. The session will be in one of these states. It is recommended to poll every 5 seconds until a final state is reached:
+
+        ● pending - nothing to do other than continue polling
+
+        ● done - the session completed successfully, and you will receive a webhook to your backend
+
+        ● failed - you may wish to show the user a login form again, or a bank select form including the error
+
+        Type in the GET URL will consist of face, front or rear.
+
+        **Please Note!** The values for the type parameter in this endpoint are different than the values used on the CreateRequest endpoint.
+      summary: Check image status
+      parameters:
+      - in: path
+        name: image_type
+        schema:
+          type: string
+          pattern: ^[a-zA-Z]+$
+        required: true
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgeverifyViewImageStatusResponse'
+              examples:
+                Example1:
+                  value:
+                    status: pending
+                  summary: Example 1
+          description: ''
+  /api/v2/image_upload/:
+    post:
+      operationId: v2_image_upload_create
+      description: To upload the Customer images, use the Image Upload API. The <guid>
+        is a request GUID that you are given from the Create Request API.
+      summary: Upload image
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadAVImage'
+            examples:
+              Example1:
+                value:
+                  type: face
+                  guid: 92334464-513E-11E7-A970-6EC618044181
+                  data: xxxx
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UploadAVImage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadAVImage'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgeverifyViewUploadImageResponse'
+              examples:
+                Success:
+                  value:
+                    task_id: 9633F964-513E-11E7-A970-6EC618044181
+                Error:
+                  value:
+                    errors:
+                    - invalid request
+          description: ''
+  /api/v2/list:
+    post:
+      operationId: v2_list_create
+      description: This allows your developer to determine the configured Site information
+        in your account, as well as supported Banks if required.
+      summary: List sites/banks
+      tags:
+      - bank
+      - age
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/List'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/List'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/List'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+              examples:
+                QuerySites:
+                  value:
+                    sites:
+                    - siteID: '9'
+                      url: https://yourfinancialsite.com/
+                      displayname: Example Site
+                  summary: Query Sites
+          description: ''
+  /api/v2/microcheck/search:
+    post:
+      operationId: v2_microcheck_search_create
+      description: Create a loan request search. Please provide at least 4             of
+        the optional parameters, not including siteID, referenceid. When the data
+        is ready,             a webhook will be sent to the endpoint configured through
+        <strong>v2_postback_url</strong>.            Micro Check must be triggered
+        with a bank verification siteID
+      summary: Create micro check
+      tags:
+      - micro check
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MicrocheckSearch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MicrocheckSearch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MicrocheckSearch'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckSearchAccepted'
+              examples:
+                LoanRequestSearchAccepted:
+                  value:
+                    guid: E672E3F7-54CF-44E9-9932-AD2CF6D2CF9F
+                  summary: Loan request search accepted
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckBadRequestError'
+              examples:
+                BadRequest:
+                  value:
+                    error: 'siteID: This required field is missing.'
+                  summary: Bad Request
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckForbiddenError'
+              examples:
+                Forbidden:
+                  value:
+                    error: Not authorized to perform this action.
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckInternalServerError'
+              examples:
+                InternalServerError:
+                  value:
+                    error: Unexpected error occurred.
+                  summary: Internal Server Error
+          description: ''
+  /api/v2/microcheck/search/{guid}:
+    get:
+      operationId: v2_microcheck_search_retrieve
+      description: Retrieve loan requests search results.             The result of
+        the creditbook_data may or may not be empty.            If there is no-hit,
+        try refining your search parameters.
+      summary: Get micro check results
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      tags:
+      - micro check
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckSearchResult'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckForbiddenError'
+              examples:
+                Forbidden:
+                  value:
+                    error: Not authorized to perform this action.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckNotFoundError'
+              examples:
+                NotFound:
+                  value:
+                    error: Not found.
+                  summary: Not found
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckInternalServerError'
+              examples:
+                InternalServerError:
+                  value:
+                    error: Unexpected error occurred.
+                  summary: Internal Server Error
+          description: ''
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MicrocheckBadGatewayError'
+              examples:
+                UpstreamServiceFailed:
+                  value:
+                    error: Upstream service failed.
+                  summary: Upstream service failed
+          description: ''
+  /api/v2/pdf_report/{guid}:
+    get:
+      operationId: v2_pdf_report_retrieve
+      description: Return the PDF report binary for a given request GUID.
+      summary: Download PDF Report
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - income
+          - transaction
+        description: Specify `income` to return Income and Spending report PDF or
+          `transaction` to return Transaction Report PDF. Defaults to `income`.
+      tags:
+      - bank
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v2/pii/fetch:
+    post:
+      operationId: v2_pii_fetch_create
+      description: ':param request: Request object'
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/pii/start:
+    post:
+      operationId: v2_pii_start_create
+      description: ':param request: Request object'
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/pii/status/{task_id}:
+    get:
+      operationId: v2_pii_status_retrieve
+      description: ':param request: Request object'
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/refresh:
+    post:
+      operationId: v2_refresh_create
+      description: for merchants only
+      tags:
+      - v2
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v2/risk:
+    post:
+      operationId: v2_risk_create
+      description: |-
+        In order to generate a Risk Score, you must have a pre-existing successful request in the Inverite system. Sending the request GUID to the Risk API will trigger the creation of a request attempt.
+
+        After successfully starting a Risk request, use the Status API ( see: Inverite Verification API (Bank)) to poll for the status. Upon the successful completion of a Risk request, the results will be returned by the Risk Status
+        API.
+
+         Reasons you may not be able to perform a risk request:
+
+         - Each successful request is allowed 1 Risk Score.
+
+         Reasons a risk request may fail:
+
+         - There may not be enough data to generate a Risk Score
+      summary: Create risk request
+      tags:
+      - risk
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskViewRiskRequest'
+            examples:
+              Example1:
+                value:
+                  request: 9633F964-513E-11E7-A970-6EC618044181
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RiskViewRiskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RiskViewRiskRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskViewRiskResponse'
+              examples:
+                Example1:
+                  value:
+                    sourcerequest: 9633F964-513E-11E7-A970-6EC618044181
+                    request: 86BC69D4-629B-4422-BF50-0CF55C363E88
+                    status: Risk Processing
+                    task_id: 3ce5ecd0-032f-456a-9e8f-98c4adf7ff51
+                  summary: Example 1
+          description: ''
+  /api/v2/risk_status/{task_id}:
+    get:
+      operationId: v2_risk_status_retrieve
+      description: |-
+        While a session is in progress you will use the Risk Status API to monitor its progress. The session will be in one of these states. It is recommended to poll every 5 seconds until a final state is reached:
+
+         ● pending - nothing to do other than continue polling
+
+         ● success - the session completed successfully, and you will receive a webhook to your backend
+
+         ● failed - you may wish to show the user a login form again, or a bank select form including the error
+      summary: Check risk status
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      tags:
+      - risk
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskStatusViewResponse'
+              examples:
+                Example1:
+                  value:
+                    status: success
+                    precision_score: 0.20437617320482038
+                    bin_score: 5
+                    request: 86BC69D4-629B-4422-BF50-0CF55C363E88
+                    sourcerequest: 9633F964-513E-11E7-A970-6EC618044181
+                  summary: Example 1
+                Example2:
+                  value:
+                    status: error
+                    reason: something explaining why it broke
+                    request: 86BC69D4-629B-4422-BF50-0CF55C363E88
+                    sourcerequest: 9633F964-513E-11E7-A970-6EC618044181
+                  summary: Example 2
+          description: ''
+  /api/v2/session_challenge_response/{task_id}:
+    post:
+      operationId: v2_session_challenge_response_create
+      description: "Sometimes a bank will require additional authentication image,\
+        \ usually a simple question but sometimes an image that the user must choose.\n\
+        \    \nIf an image response is required, you should display the image returned\
+        \ by the Session Status API, and respond with the x,y coordinates of where\
+        \ on the image the user clicks."
+      summary: Challenge question response
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      tags:
+      - ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionChallengeResponse'
+            examples:
+              Example1:
+                value:
+                  response: 5,5
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionChallengeResponse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionChallengeResponse'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionChallengeResponseViewResponse'
+              examples:
+                Example1:
+                  value:
+                    errors: invalid response
+                  summary: Example 1
+                Example2:
+                  value:
+                    status: received
+                  summary: Example 2
+          description: ''
+  /api/v2/session_start/{guid}:
+    post:
+      operationId: v2_session_start_create
+      description: Once the customer has selected their bank and you have gathered
+        their credentials, use the Session Start API to begin a bank session. You
+        will also need to supply the customers’ IP and User-Agent. The <guid> is a
+        request GUID that you are given from the Create Request API.
+      summary: Start bank verification
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      tags:
+      - ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionStart'
+            examples:
+              Example1:
+                value:
+                  bankID: '1'
+                  ip: 123.123.123.123
+                  useragent: Mozilla/etc
+                  username: username
+                  password: password
+                  branch: bank branch
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionStart'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionStart'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStartViewSessionStartResponse'
+              examples:
+                Example1:
+                  value:
+                    job_id: 9633F964-513E-11E7-A970-6EC618044181
+                  summary: Example 1
+                Example2:
+                  value:
+                    errors: form validation
+                    details:
+                      password:
+                      - Ensure this value has at least 6 characters (it has 3).
+                  summary: Example 2
+          description: ''
+  /api/v2/session_start_av/{guid}:
+    get:
+      operationId: v2_session_start_av_retrieve
+      description: Once the customer has uploaded their images, use the Session Start
+        API to begin a ID verification session. The <guid> is a request GUID that
+        you are given from the Create Request API.
+      summary: Start age verification
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgeverifyViewSessionStartResponse'
+              examples:
+                Example1:
+                  value:
+                    task_id: 9633F964-513E-11E7-A970-6EC618044181
+                  summary: Example 1
+                Error:
+                  value:
+                    errors:
+                    - invalid request
+          description: ''
+  /api/v2/session_status/{task_id}:
+    get:
+      operationId: v2_session_status_retrieve
+      description: |-
+        While a session is in progress you will use the Session Status API to monitor its progress. The session will be in one of these states. It is recommended to poll every 5 seconds until a final state is reached:
+
+         ● working - nothing to do other than continue polling
+
+         ● success - the session completed successfully, and you will receive a webhook to your backend
+
+         ● failed - you may wish to show the user a login form again, or a bank select form including the error
+
+         ● need_input - you will need to respond using the Session Challenge Response API
+
+         ● need_dropdown_input - you will need to respond from the options using the Session Challenge Response API
+
+         ● need_image_coordinate_input - you will need to respond using the Session Challenge Response API
+      summary: Check bank verification status
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[a-f0-9-]+$
+        required: true
+      tags:
+      - ''
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatusViewSessionStatusResponse'
+              examples:
+                Example1:
+                  value:
+                    status: need_input
+                    challenge: Who was your third grade teacher?
+                    progress: 10
+                  summary: Example 1
+          description: ''
+  /api/v2/session_status_av/{task_id}:
+    get:
+      operationId: v2_session_status_av_retrieve
+      description: |-
+        While a session is in progress you will use the Session Status API to monitor its progress. The session will be in one of these states. It is recommended to poll every 5 seconds until a final state is reached:
+
+        ● pending - nothing to do other than continue polling
+
+        ● done - the session completed successfully, and you will receive a webhook to your backend
+
+        ● failed - you may wish to show the user a login form again, or a bank select form including the error
+      summary: Check age verification status
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          pattern: ^[A-Za-f0-9-]+$
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgeverifyViewSessionStatusResponse'
+              examples:
+                Example1:
+                  value:
+                    status: pending
+                  summary: Example 1
+          description: ''
+  /api/v2/status:
+    post:
+      operationId: v2_status_create
+      description: After creating a request, you may wish to query the status. This
+        is a simple query that may be performed for one or more GUID at a time.         It
+        returns a list of the guid, and the current status (example "Verified" or
+        "Processing" or "Not Started").         For Age Verification, status may be
+        ["Approved", "Denied", "Not Started"].         For Bank Verification, status
+        may be ["Verified", "Processing", "Attempted but failed", "Not Started", "No
+        notification", "No device", "Account locked", "Setup MFA", "Confirm profile",
+        "Update password", "Bank is unavailable", "Authentication failed", "Requires
+        a new link", "MFA timed out", "Failed MFA", "Setup account"].
+      summary: Check request status
+      tags:
+      - bank
+      - age
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Status'
+            examples:
+              Example1:
+                value:
+                  type: guid
+                  guid:
+                  - 9633F964-513E-11E7-A970-6EC618044181
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Status'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Status'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusViewListResponse'
+              examples:
+                Example1:
+                  value:
+                    status:
+                    - guid: 9633F964-513E-11E7-A970-6EC618044181
+                      result: Verified
+                  summary: Example 1
+          description: ''
+  /api/v2/temporary_image/{guid}:
+    get:
+      operationId: v2_temporary_image_retrieve
+      description: |-
+        Returns temporary url to view the images uploaded
+                    with the age verification if the image exists.
+                    If included raw=true parameter,
+                    it returns link to the raw bytes of the original image.
+      summary: View age verification image
+      parameters:
+      - in: path
+        name: guid
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9-]+$
+        required: true
+      - in: query
+        name: img_type
+        schema:
+          type: string
+          enum:
+          - face
+          - front
+          - rear
+        description: Specify image types with comma separated values.                     For
+          example, 'img_type=front,rear' to return only front                     and
+          rear images. If parameter not included, all image                     types
+          will be returned
+      - in: query
+        name: raw
+        schema:
+          type: string
+          enum:
+          - 'true'
+        description: Specify 'true' to return URL to raw image bytes.                    If
+          parameter is not included, it returns URL to                     thumbnail
+          images
+      tags:
+      - age
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgeverifyViewTemporaryURLResponse'
+              examples:
+                Example1:
+                  value:
+                    face: ''
+                    front: ''
+                    rear: https://temporary_image_url
+                  summary: Example 1
+                ErrorExample:
+                  value:
+                    error:
+                    - list of errors
+                  summary: Error example
+          description: ''
+  /api/v2/translator:
+    post:
+      operationId: v2_translator_create
+      description: Convert an AGP into Inverite AGP format
+      summary: Create translator request
+      tags:
+      - translator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Translator'
+            examples:
+              Translator:
+                value:
+                  paramter: <JSON parameter data>
+                  data: <AGP format JSON data>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Translator'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Translator'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslatorViewResponse'
+              examples:
+                Translator:
+                  value:
+                    paramter: <JSON parameter data>
+                    data: <AGP format JSON data>
+          description: ''
+  /api/v3/refresh:
+    post:
+      operationId: v3_refresh_create
+      description: |-
+        In order to perform a refresh, you must have a pre-existing successful request in the Inverite system. Sending the request GUID to the refresh API will trigger the creation of a request attempt. This API is rate-limited. You can't have more than three running sessions within 5 minutes. If that were the case, this API will return a 200 with {'detail': 'Too many requests'} as response.
+
+         After successfully starting a refresh, you may use the Status API ( see: Inverite Verification API (Bank)) to poll for the status. Upon the successful completion of a request, a Postback will be sent to your server as normal.
+
+         Reasons you may not be able to perform a refresh:
+
+         - Refresh token has been used. Each successful request is allowed 1 refresh. A successful refresh will result in a new request, which may in turn be refreshed if successful.
+
+         Reasons a refresh may fail:
+
+         - A person may have changed their credentials
+
+         - A previously unencountered security question and answer may have been received
+
+         - The “Save This Computer” cookie may have expired
+
+         Note: The API at POST /api/v2/refresh has been removed. Please see /api/v3/refresh
+      summary: Create refresh request
+      tags:
+      - refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+            examples:
+              Example1:
+                value:
+                  guid: 00876599-CCA9-40FE-98B3-6F18ABF4286A
+                summary: Example 1
+              Example2:
+                value:
+                  guid: 00876599-CCA9-40FE-98B3-6F18ABF4286A
+                  email: name@email.com
+                  phone: '6048880000'
+                  immediate_refresh: true
+                  send_link_on_fail: false
+                summary: Example 2
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Refresh'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshViewResponse'
+              examples:
+                RequestCreatedAndRefreshIsSuccessful:
+                  value:
+                    success: 1
+                    guid: F98A3DDC-0812-4EA4-8A65-A400396E73BA
+                    api_key: 4001751D-4205-4963-A388-E45A3D5C7299
+                    task_id: 055b9f38-c413-4616-9c5f-ace2b5bd545c
+                    url: https://{host}/customer/v2/web/start/F98A3DDC-0812-4EA4-8A65-A400396E73BA/8/
+                  summary: Request created and refresh is successful
+                RequestCreatedButRefreshIsNotExecuted:
+                  value:
+                    success: 1
+                    guid: F98A3DDC-0812-4EA4-8A65-A400396E73BA
+                    api_key: 4001751D-4205-4963-A388-E45A3D5C7299
+                    task_id: null
+                    url: https://{host}/customer/v2/web/start/F98A3DDC-0812-4EA4-8A65-A400396E73BA/8/
+                  summary: Request created but refresh is not executed
+                RequestCreatedButRefreshFailed:
+                  value:
+                    success: 0
+                    reason: Attempted but failed
+                    url: https://{host}/customer/v2/web/start/F98A3DDC-0812-4EA4-8A65-A400396E73BA/8/
+                  summary: Request created but refresh failed
+          description: ''
+  /customer/web/create:
+    get:
+      operationId: customer_web_create_retrieve
+      description: "The iFrame method of creating a request is a simple and effective\
+        \ way to create requests with Inverite. It will provide you the ability to\
+        \ easily insert an iFrame into your customer process (typically, after all\
+        \ customer information and sign-up has taken place) to perform a bank verification.\
+        \            \nThe following parameters may be passed to the iFrame URL. \
+        \           \n\nTake care to provide a value for the referenceid parameter\
+        \ which uniquely and correctly identifies your user or customer. If an IBV\
+        \ request with the same reference ID             is already open, the iframe\
+        \ will redirect to that request instead of creating a new one.           \
+        \ \n\nYou may optionally include an email address if you wish to have Inverite\
+        \ send a request email to your customer. For anonymous usage, do not include\
+        \ this parameter."
+      responses:
+        '200':
+          content: {}
+          description: Deny/Error page
+        '302':
+          content: {}
+          description: Redirect to iFrame url
+      summary: Bank iFrame method
+      tags:
+      - bank iframe
+      parameters:
+      - in: query
+        name: email
+        schema:
+          type: string
+        description: Customer Email Address. Optional. Must be provided for Inverite
+          to email customer.
+        required: false
+      - in: query
+        name: referenceid
+        schema:
+          type: string
+        required: true
+        description: 'Unique Customer Number from your database or CRM. Recommend:
+          YourSiteName_(referenceid), Example: YourSiteName_12345'
+      - in: query
+        name: ip
+        schema:
+          type: string
+        required: false
+        description: Customer IP address
+      - in: query
+        name: site
+        schema:
+          type: string
+        required: true
+        description: Site identifier, a specific string provided by your Account Representative
+      - in: query
+        name: firstname
+        schema:
+          type: string
+        required: false
+        description: Customer first name
+      - in: query
+        name: middlename
+        schema:
+          type: string
+        required: false
+        description: Customer middle name
+      - in: query
+        name: lastname
+        schema:
+          type: string
+        required: false
+        description: Customer last name
+      - in: query
+        name: province
+        schema:
+          type: string
+        required: false
+        description: Province, in 2 digit format. Ex BC
+      - in: query
+        name: risk_score
+        schema:
+          type: string
+        required: false
+        description: If set to 1 will automatically generate a risk score for the
+          request
+      - in: query
+        name: bankid
+        schema:
+          type: integer
+        required: false
+        description: Bank identifier, if provided will skip bank selection screen
+      - in: query
+        name: hide_options
+        schema:
+          type: boolean
+        required: false
+        description: If "true" and "bankid" was provided the customer will not be
+          able to change the selected bank. Default is false.
+      - in: query
+        name: hide_logo
+        schema:
+          type: boolean
+        required: false
+        description: If "true" the Inverite logo will not be displayed in the iFrame
+          footer. Default is false.
+      - in: query
+        name: language_pref
+        schema:
+          type: string
+          enum:
+          - en
+          - fr
+          - es
+        required: false
+        description: If provided, the iFrame will be displayed in the specified language.
+          Default is "en" (English).
+      callbacks:
+        webhook:
+          Your_URL_Endpoint:
+            post:
+              summary: Webhook
+              description: By providing a URL endpoint that accepts a POST with JSON
+                data to us, we will automatically send the customer information to
+                the URL endpoint as soon as it is completed.
+              externalDocs:
+                description: Find out more
+                url: /documentation/#operation/webhook
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/FetchResponse'
+              responses:
+                '200':
+                  description: Indicates that the data was received successfully
+components:
+  schemas:
+    Account:
+      type: object
+      description: Individual child response
+      properties:
+        transit:
+          type: string
+          description: Transit of financial institution
+        account:
+          type: string
+          description: Customer account number
+        bank:
+          type: string
+          description: Bank name
+        institution:
+          type: string
+          description: Bank institution number
+        statistics:
+          type: object
+          additionalProperties:
+            type: string
+          description: Dictionary of account metrics
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FetchViewTransaction'
+          description: Array of recent transactions
+        available_balance:
+          type: string
+          description: The available balance including overdraft, not always shown
+        type:
+          type: string
+          description: If known one of "chequing", "saving", "credit-card", "investment",
+            or "business"
+        payschedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Income'
+          description: Array of Income dictionaries
+        bank_pdf_statements:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankPDFStatement'
+          description: Bank PDF statements associated with the account
+      required:
+      - account
+      - available_balance
+      - bank
+      - bank_pdf_statements
+      - institution
+      - payschedules
+      - statistics
+      - transactions
+      - transit
+      - type
+    AccountValidation:
+      type: object
+      properties:
+        type:
+          type: string
+          description: type of validation performed
+        result:
+          type: string
+          description: One of PASS | PARTIAL | FAIL
+        confidence:
+          type: number
+          format: double
+          description: confidence indicator
+        details:
+          type: string
+      required:
+      - confidence
+      - details
+      - result
+      - type
+    AgeverifyViewImageStatusResponse:
+      type: object
+      description: For api/ageverify.py
+      properties:
+        status:
+          type: string
+          description: The status of the request (pending, done)
+        success:
+          type: boolean
+          description: Boolean indicating whether the sesion start succeeded
+        error:
+          type: boolean
+          description: Boolean indicating whether the session start failed
+        message:
+          type: string
+          description: Description of the error state
+      required:
+      - error
+      - message
+      - status
+      - success
+    AgeverifyViewSessionStartResponse:
+      type: object
+      description: For api/ageverify.py
+      properties:
+        task_id:
+          type: string
+          description: Guid to be used with the Session Status API
+        success:
+          type: boolean
+          description: Boolean indicating whether the session start succeeded
+        error:
+          type: boolean
+          description: Boolean indicating whether the session start failed
+        message:
+          type: string
+          description: Description of the error state
+        missing:
+          type: array
+          items:
+            type: string
+          description: face, id_front, id_back
+      required:
+      - error
+      - message
+      - missing
+      - success
+      - task_id
+    AgeverifyViewSessionStatusResponse:
+      type: object
+      description: For api/ageverify.py
+      properties:
+        status:
+          type: string
+          description: The status of the request (pending, done)
+      required:
+      - status
+    AgeverifyViewTemporaryURLResponse:
+      type: object
+      description: For api/ageverify.py
+      properties:
+        front:
+          type: string
+          description: temporary url to view image
+        rear:
+          type: string
+          description: temporary url to view image
+        face:
+          type: string
+          description: temporary url to view image
+      required:
+      - face
+      - front
+      - rear
+    AgeverifyViewUploadImageResponse:
+      type: object
+      description: For api/ageverify.py
+      properties:
+        task_id:
+          type: string
+          description: A unique identifier to be used with Session Status API
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+      - task_id
+    Bank:
+      type: object
+      description: Individual child response
+      properties:
+        bankID:
+          type: integer
+        name:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+      required:
+      - aliases
+      - bankID
+      - name
+    BankFormField:
+      type: object
+      description: Individual child response
+      properties:
+        name:
+          type: string
+          description: Choice of "username", "password", "branch"
+        type:
+          type: string
+          description: Choice of "Text", "Password", "Select"
+        label:
+          type: string
+          description: A description of the field suitable for display to the customer,
+            ie. "Account Number"
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Option'
+      required:
+      - label
+      - name
+      - options
+      - type
+    BankPDFStatement:
+      type: object
+      properties:
+        name:
+          type: string
+          description: PDF file name
+        link:
+          type: string
+          description: link to PDF
+      required:
+      - link
+      - name
+    BankViewBankFormResponse:
+      type: object
+      description: For api/bank.py
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankFormField'
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+      - fields
+    BankViewListAvailableResponse:
+      type: object
+      description: For api/bank.py
+      properties:
+        banks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bank'
+          description: An identifier used in the Bank Form and Session Start APIs
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - banks
+      - errors
+    Contact:
+      type: object
+      description: Individual child response
+      properties:
+        type:
+          type: string
+          description: email or phone
+        contact:
+          type: string
+          description: phone number or email address
+      required:
+      - contact
+      - type
+    Create:
+      type: object
+      description: Serialize Create api call parameters.
+      properties:
+        siteID:
+          type: string
+          description: Your siteID; required for both bank and age verification
+        email:
+          type: string
+          format: email
+          description: Customer Email Address; applicable to both bank and age verification
+        username:
+          type: string
+          description: 'Username (if no email provided). Recommend: YourSiteName_(referenceid);
+            applicable to both bank and age verification'
+        firstname:
+          type: string
+          description: First name of the customer; applicable to both bank and age
+            verification
+        middlename:
+          type: string
+          description: Middle name of the customer; applicable to both bank and age
+            verification
+        lastname:
+          type: string
+          description: Last name of the customer; applicable to both bank and age
+            verification
+        referenceid:
+          type: string
+          description: Unique customer identifier from Merchant database or CRM; applicable
+            to both bank and age verification
+        phone:
+          type: string
+          description: Phone Number to text Verification Request to. Ex 6045551313;
+            applicable to both bank and age verification
+        province:
+          enum:
+          - null
+          - ''
+          - BC
+          - AB
+          - MB
+          - NB
+          - NL
+          - NT
+          - NS
+          - NU
+          - 'ON'
+          - PE
+          - QC
+          - SK
+          - YT
+          x-spec-enum-id: 8b5ecc1019e376dd
+          description: "Require Provincial regulatory compliance; applicable to bank\
+            \ verification only\n\n* `None` - None\n* `` - \n* `BC` - BC\n* `AB` -\
+            \ AB\n* `MB` - MB\n* `NB` - NB\n* `NL` - NL\n* `NT` - NT\n* `NS` - NS\n\
+            * `NU` - NU\n* `ON` - ON\n* `PE` - PE\n* `QC` - QC\n* `SK` - SK\n* `YT`\
+            \ - YT"
+        ip:
+          type: string
+          description: The IP of the customer; applicable to bank verification only
+        days:
+          type: integer
+          description: Number of days of transactions needed; between 30 to 365 days;
+            applicable to bank verification only
+        type:
+          type: string
+          nullable: true
+          description: Detected Customer device type; applicable to bank verification
+            only
+        bankID:
+          type: string
+          description: Only allow specified bankID; applicable to bank verification
+            only
+        hide_options:
+          type: boolean
+          description: hide the option for customers to submit a new bank request
+            form; applicable to bank verification only
+        urlbody:
+          type: string
+          description: URL description to pass to customer for iframe method; applicable
+            to bank verification only
+        url:
+          type: string
+          description: URL to pass to customer for iframe method; applicable to bank
+            verification only
+        requestedfields:
+          type: array
+          items:
+            type: string
+            nullable: true
+          nullable: true
+          description: 'JSON Array; allowed values: transactions, name, address, accounts;
+            applicable to bank verification only'
+        add_ons:
+          type: array
+          items:
+            type: string
+            nullable: true
+          nullable: true
+          description: 'JSON array of optional add-ons. Allowed values: ''liveness_check''
+            (only for IAV), ''name_match'' and ''gross_income_calculation'' (only
+            for IBV).'
+        name_match:
+          type: boolean
+          default: false
+          description: ⚠️ Deprecated. Will be removed in a future API version. Use
+            add_ons instead. Return name match validation if enabled
+        gross_income_calculation:
+          type: boolean
+          default: false
+          description: ⚠️ Deprecated. Will be removed in a future API version. Use
+            add_ons instead. Return gross income if enabled
+        risk_score:
+          type: boolean
+          default: false
+          description: Return risk score if enabled; applicable to bank verification
+            only
+        force_new_request:
+          type: integer
+          description: Force a new request; applicable to both bank and age verification
+        prior_guid:
+          type: string
+          description: Prior request GUID to locate same customer; applicable to both
+            bank and age verification
+        password:
+          type: string
+          description: Password for the app; applicable to bank verification only
+        disallow_iframe:
+          type: boolean
+          default: false
+          description: Do not allow iframe method; applicable to bank verification
+            only
+        language_pref:
+          type: string
+          default: ''
+          description: Language preference; applicable to both bank and age verification
+        operating_system:
+          type: string
+          nullable: true
+          description: Depreciated
+        template:
+          type: string
+          description: Name of the iframe template; applicable to both bank and age
+            verification
+        emailtemplate:
+          type: string
+          description: Depreciated
+        redirecturl:
+          type: string
+          default: ''
+          description: Redirect URL on success; applicable to both bank and age verification
+        av_custom_msg:
+          type: string
+          default: '{}'
+          description: Depreciated
+        bv_method:
+          enum:
+          - null
+          - WS
+          - PDF
+          x-spec-enum-id: 5e7fbefbbef436bb
+          default: WS
+          description: |-
+            WS to scrape the customer's web banking, PDF to have them provide PDF statements.
+
+            * `None` - None
+            * `WS` - WS
+            * `PDF` - PDF
+      required:
+      - siteID
+    CreateViewResponse:
+      type: object
+      description: For api/create.py
+      properties:
+        iframeurl:
+          type: string
+        request_guid:
+          type: string
+          maxLength: 36
+        username:
+          type: string
+          maxLength: 255
+        password:
+          type: string
+          maxLength: 255
+        reused:
+          type: integer
+        downloadurl:
+          type: string
+        api_key:
+          type: string
+      required:
+      - iframeurl
+      - request_guid
+      - username
+    FetchResponse:
+      oneOf:
+      - $ref: '#/components/schemas/FetchViewBankResponse'
+      - $ref: '#/components/schemas/FetchViewAgeResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          bank: '#/components/schemas/FetchViewBankResponse'
+          age: '#/components/schemas/FetchViewAgeResponse'
+    FetchViewAgeResponse:
+      type: object
+      description: For api/fetch.py
+      properties:
+        birthdate:
+          type: string
+          format: date
+          description: Extracted birthdate from custerom's ID
+        calculated_age:
+          type: string
+          description: Current age for customer
+        status:
+          type: string
+          description: Resulting status of verification attempt
+        similarity:
+          type: string
+          description: Similarity between Selfie and front of ID
+        firstname:
+          type: string
+        middlename:
+          type: string
+        lastname:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postal:
+          type: string
+        referenceid:
+          type: string
+          description: Pass-thru field from API creation
+        gender:
+          type: string
+          description: M or F
+      required:
+      - address
+      - birthdate
+      - calculated_age
+      - city
+      - firstname
+      - gender
+      - lastname
+      - middlename
+      - postal
+      - referenceid
+      - similarity
+      - status
+    FetchViewBankResponse:
+      type: object
+      description: For api/fetch.py
+      properties:
+        complete_datetime:
+          type: string
+          format: date-time
+          description: Date and time the verification was completed
+        referenceid:
+          type: string
+          description: Customer identifier
+          maxLength: 255
+        request:
+          type: string
+          description: Guid of the verification request
+          maxLength: 36
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+          description: Array of Customer financial accounts
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+          description: Array of Customer contact information
+        status:
+          type: string
+          description: Current status of Request. Will show "Verified"
+        error:
+          type: string
+          description: Only Populated if Request not Verified
+        name:
+          type: string
+          description: Account holder name(s) from profile
+        address:
+          type: string
+          description: Account holder’s address from profile
+        all_bank_pdf_statements:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankPDFStatement'
+          description: All bank PDF statements associated with the request
+        account_validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountValidation'
+      required:
+      - accounts
+      - address
+      - all_bank_pdf_statements
+      - complete_datetime
+      - contacts
+      - error
+      - name
+      - referenceid
+      - request
+      - status
+    FetchViewTransaction:
+      type: object
+      description: For api/fetch.py
+      properties:
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionFlag'
+        category:
+          type: string
+          description: Transaction category
+        credit:
+          type: string
+          description: Amount account was credited
+        debit:
+          type: string
+          description: Amount account was debited
+        date:
+          type: string
+          format: date
+          description: Date of transaction
+        details:
+          type: string
+          description: Transaction details description
+        balance:
+          type: string
+          description: Account balance after
+      required:
+      - balance
+      - category
+      - credit
+      - date
+      - debit
+      - details
+      - flags
+    IDVCreateLivenessResp:
+      type: object
+      properties:
+        session_id:
+          type: string
+          maxLength: 255
+        aws_access_key_id:
+          type: string
+          maxLength: 255
+        aws_secret_access_key:
+          type: string
+          maxLength: 255
+        aws_session_token:
+          type: string
+          maxLength: 255
+      required:
+      - aws_access_key_id
+      - aws_secret_access_key
+      - aws_session_token
+      - session_id
+    Income:
+      type: object
+      description: Individual grandchild response
+      properties:
+        frequency:
+          type: string
+          description: Payroll frequency and parity
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FetchViewTransaction'
+          description: Array of recent payroll transactions
+        account:
+          type: string
+          description: deposit account
+        income_type:
+          type: string
+          description: monthly, government, self-employed etc
+        score:
+          type: number
+          format: double
+          description: confidence indicator
+        monthly_income:
+          type: string
+          description: Calculated total monthly income
+        future_payments:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Array of dates for next payroll dates
+        details:
+          type: string
+          description: deposit descriptor
+      required:
+      - account
+      - details
+      - frequency
+      - future_payments
+      - income_type
+      - monthly_income
+      - payments
+      - score
+    List:
+      type: object
+      description: Serialize List api call parameters.
+      properties:
+        type:
+          enum:
+          - banks
+          - sites
+          - branches
+          type: string
+          x-spec-enum-id: 68f3b1381070b29e
+          description: |-
+            "banks" to return a list of supported banks. "sites" to return a list of configured Merchant sites
+
+            * `banks` - banks
+            * `sites` - sites
+            * `branches` - branches
+        list_type:
+          type: string
+      required:
+      - type
+    ListResponse:
+      oneOf:
+      - $ref: '#/components/schemas/ListViewSiteResponse'
+      - $ref: '#/components/schemas/ListViewBankResponse'
+      - $ref: '#/components/schemas/ListViewBranchResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          sites: '#/components/schemas/ListViewSiteResponse'
+          banks: '#/components/schemas/ListViewBankResponse'
+          branches: '#/components/schemas/ListViewBranchResponse'
+    ListViewBank:
+      type: object
+      description: Individual child response
+      properties:
+        bankID:
+          type: string
+        displayname:
+          type: string
+      required:
+      - bankID
+      - displayname
+    ListViewBankResponse:
+      type: object
+      description: For api/list.py
+      properties:
+        banks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListViewBank'
+      required:
+      - banks
+    ListViewBranch:
+      type: object
+      description: Individual child response
+      properties:
+        branchID:
+          type: string
+        name:
+          type: string
+        devices:
+          type: string
+      required:
+      - branchID
+      - devices
+      - name
+    ListViewBranchResponse:
+      type: object
+      description: For api/list.py
+      properties:
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListViewBranch'
+      required:
+      - branches
+    ListViewSite:
+      type: object
+      description: Individual child response
+      properties:
+        siteID:
+          type: string
+        displayname:
+          type: string
+        url:
+          type: string
+      required:
+      - displayname
+      - siteID
+      - url
+    ListViewSiteResponse:
+      type: object
+      description: For api/list.py
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListViewSite'
+      required:
+      - sites
+    MicrocheckAPI:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          description: YYYY-MM-DD
+        address:
+          $ref: '#/components/schemas/MicrocheckAddress'
+        phone1:
+          type: string
+        phone2:
+          type: string
+        fax:
+          type: string
+        email:
+          type: string
+        job:
+          $ref: '#/components/schemas/MicrocheckJob'
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/MicrocheckReference'
+        amount:
+          type: number
+          format: double
+        requestDate:
+          type: string
+          description: Datetime ISO8601
+        ipAddress:
+          type: string
+        language:
+          type: string
+        status:
+          type: string
+        comments:
+          type: string
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/MicrocheckStatus'
+        lender:
+          type: string
+      required:
+      - address
+      - amount
+      - comments
+      - dateOfBirth
+      - email
+      - fax
+      - firstName
+      - ipAddress
+      - job
+      - language
+      - lastName
+      - lender
+      - phone1
+      - phone2
+      - references
+      - requestDate
+      - status
+      - statusHistory
+    MicrocheckAddress:
+      type: object
+      properties:
+        streeAddressLine1:
+          type: string
+        streeAddressLine2:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        stateProvince:
+          type: string
+        zipPostalCode:
+          type: string
+        effectiveDate:
+          type: string
+          description: YYYY-MM-DD
+      required:
+      - city
+      - country
+      - effectiveDate
+      - stateProvince
+      - streeAddressLine1
+      - streeAddressLine2
+      - zipPostalCode
+    MicrocheckBadGatewayError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Upstream service failed.
+      required:
+      - error
+    MicrocheckBadRequestError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Bad request.
+      required:
+      - error
+    MicrocheckForbiddenError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Not authorized.
+      required:
+      - error
+    MicrocheckInternalServerError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Unexpected error occurred.
+      required:
+      - error
+    MicrocheckJob:
+      type: object
+      properties:
+        companyName:
+          type: string
+        companyPhone:
+          type: string
+        supervisorName:
+          type: string
+        jobTitle:
+          type: string
+        payFrequency:
+          type: string
+        payNext:
+          type: string
+        startDate:
+          type: string
+          description: YYYY-MM-DD
+      required:
+      - companyName
+      - companyPhone
+      - jobTitle
+      - payFrequency
+      - payNext
+      - startDate
+      - supervisorName
+    MicrocheckNotFoundError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Not found.
+      required:
+      - error
+    MicrocheckReference:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        relationship:
+          type: string
+      required:
+      - email
+      - firstName
+      - lastName
+      - phone
+      - relationship
+    MicrocheckResultsWrapper:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MicrocheckAPI'
+          description: Results may or may not be empty. Empty means no-hit.
+    MicrocheckSearch:
+      type: object
+      properties:
+        siteID:
+          type: string
+          description: Your siteID
+        referenceid:
+          type: string
+          description: Unique customer identifier from Merchant database or CRM
+        firstname:
+          type: string
+          description: Customer first name
+        lastname:
+          type: string
+          description: Customer last name
+        email:
+          type: string
+          format: email
+          description: Customer email address
+        birthdate:
+          type: string
+          format: date
+          description: Customer date of birth. Ex. 1980-12-01
+        phone:
+          type: string
+          description: Customer phone number. Ex. 6045551313
+        ip:
+          type: string
+          description: Customer IP address
+      required:
+      - siteID
+    MicrocheckSearchAccepted:
+      type: object
+      properties:
+        guid:
+          type: string
+          description: guid of the search request. Use this guid to fetch results
+            without performing another search.
+          maxLength: 36
+      required:
+      - guid
+    MicrocheckSearchResult:
+      type: object
+      properties:
+        complete_datetime:
+          type: string
+          format: date-time
+          description: Date and time the verification was completed
+        referenceid:
+          type: string
+          description: Customer identifier
+          maxLength: 255
+        request:
+          type: string
+          description: Guid of the Micro Check search request
+          maxLength: 36
+        type:
+          type: string
+          description: Request type.  Will show 'microcheck'.
+        status:
+          enum:
+          - Not Started
+          - Processing
+          - Completed
+          - Attempted but failed
+          type: string
+          x-spec-enum-id: 01b300de7d037005
+          description: |-
+            current status of request
+
+            * `Not Started` - Not Started
+            * `Processing` - Processing
+            * `Completed` - Completed
+            * `Attempted but failed` - Attempted but failed
+        microcheck_data:
+          $ref: '#/components/schemas/MicrocheckResultsWrapper'
+      required:
+      - complete_datetime
+      - microcheck_data
+      - referenceid
+      - request
+      - status
+      - type
+    MicrocheckStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        date:
+          type: string
+          description: Datetime ISO8601
+        comments:
+          type: string
+        reason:
+          type: string
+      required:
+      - comments
+      - date
+      - reason
+      - status
+    Option:
+      type: object
+      description: Individual grandchild response
+      properties:
+        label:
+          type: string
+          description: The string to display to the user, ie "Branch 101 - Abbostford"
+        value:
+          type: string
+          description: The string to use in the Session Start API
+      required:
+      - label
+      - value
+    Refresh:
+      type: object
+      description: Serialize Refresh api call parameters.
+      properties:
+        guid:
+          type: string
+          description: Set to previously successful GUID
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Ignored if previously set
+        phone:
+          type: string
+          nullable: true
+          description: Ignored if previously set; prioritized over email for correspondence
+        immediate_refresh:
+          type: boolean
+          default: true
+          description: Set to false to manually send the web url to recipient
+        send_link_on_fail:
+          type: boolean
+          default: true
+          description: Set to false to prevent sending the web url to recipient after
+            a first refresh failure
+      required:
+      - guid
+    RefreshViewResponse:
+      type: object
+      description: For api/refresh.py
+      properties:
+        success:
+          type: integer
+          description: 0 = failure; 1 = success
+        guid:
+          type: string
+          description: On success = 1. GUID of newly created request
+        api_key:
+          type: string
+          description: On success = 1. api_key of newly created request
+        reason:
+          type: string
+          description: On success = 0. Reason of failure. Example 'Invalid Request',
+            'Request ineligible for refresh'
+        task_id:
+          type: string
+          description: On success = 1. Task ID for use with advanced session_status
+            API
+        url:
+          type: string
+          description: Web url to send to recipient after a first refresh failure
+      required:
+      - api_key
+      - guid
+      - reason
+      - success
+      - task_id
+      - url
+    RiskStatusViewResponse:
+      type: object
+      description: For api/risk_status.py
+      properties:
+        status:
+          type: string
+          description: The status of the request (working, success, error)
+        bin_score:
+          type: integer
+          description: Integer Score from 0 to 19 indicating the bank health of the
+            request
+        precision_score:
+          type: number
+          format: double
+          description: Floating point score for advanced applications
+        request:
+          type: string
+          description: Guid of the risk request
+        sourcerequest:
+          type: string
+          description: Guid of the risk Request
+      required:
+      - bin_score
+      - precision_score
+      - request
+      - sourcerequest
+      - status
+    RiskViewRiskRequest:
+      type: object
+      description: For api/risk.py
+      properties:
+        request:
+          type: string
+          description: Set to previously successful GUID
+      required:
+      - request
+    RiskViewRiskResponse:
+      type: object
+      description: For api/risk.py
+      properties:
+        sourcerequest:
+          type: string
+          description: guid of the initial request
+        request:
+          type: string
+          description: guid of the risk request
+        status:
+          type: string
+          description: The status of the request
+        task_id:
+          type: string
+          description: On success = 1. Task ID for use with risk_status API
+        reason:
+          type: string
+          description: On success = 0. Reason of Failure, ie "Invalid Request", "Request
+            ineligible for Risk"
+      required:
+      - request
+      - sourcerequest
+      - status
+    SessionChallengeResponse:
+      type: object
+      description: Serialize Session Session Challenge advanced api call parameters.
+      properties:
+        response:
+          type: string
+    SessionChallengeResponseViewResponse:
+      type: object
+      description: For api/session_challenge_response.py
+      properties:
+        status:
+          type: string
+        errors:
+          type: string
+      required:
+      - errors
+      - status
+    SessionStart:
+      type: object
+      description: Serialize Session Start advanced api call parameters.
+      properties:
+        bankID:
+          type: string
+        ip:
+          type: string
+        useragent:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        branch:
+          type: string
+      required:
+      - bankID
+      - useragent
+    SessionStartViewSessionStartResponse:
+      type: object
+      description: For api/session_start.py
+      properties:
+        job_id:
+          type: string
+          description: a unique identifier to be used with the Session Status API
+            and the Session Challenge Response API
+        job_host:
+          type: string
+          description: a hostname to be used with the Session Status API and the Session
+            Challenge Response API that allows rapid deployment of hotfixes when Banks
+            are updated. (www.inverite.com, live.inverite.com)
+        errors:
+          type: string
+          description: 'An error string from one of the following: ["request is expired",
+            "invalid request", "invalid bank", "customer blocked", "invalid ustomer",
+            "too many attempts"]'
+        detail:
+          type: object
+          additionalProperties:
+            type: string
+          description: A dictionary of lists with keys of string representing the
+            form fields and value as list of strings representing the errors on the
+            form
+      required:
+      - detail
+      - errors
+      - job_host
+      - job_id
+    SessionStatusViewSessionStatusResponse:
+      type: object
+      description: For api/session_status.py
+      properties:
+        status:
+          type: string
+          description: the status of the request (working, success, failed, need_input,
+            need_image_coordinate_input)
+        challenge:
+          type: string
+          description: a challenge question, ie. "Who was your third grade teacher?"
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Option'
+          description: the list of options to display in response to need_dropdown_input
+        message:
+          type: string
+          description: a message indicating what kind of failure was received that
+            should be shown to the user, ie. "Your account has been disabled, please
+            log in to your bank manually" or "Your bank is temporarily unavailable,
+            please try again in 15 minutes"
+        progress:
+          type: integer
+          description: a number from 0 to 100 indicating how far along in the process
+            we are
+        image:
+          type: string
+          description: contains a URL to an image that should be displayed to the
+            user, to which coordinates of their click position must be returned.
+      required:
+      - challenge
+      - image
+      - message
+      - options
+      - progress
+      - status
+    Status:
+      type: object
+      description: Serialize Status api call parameters.
+      properties:
+        guid:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+      required:
+      - guid
+    StatusViewIndividualResponse:
+      type: object
+      description: For api/status.py
+      properties:
+        guid:
+          type: string
+          maxLength: 36
+        result:
+          type: string
+      required:
+      - guid
+      - result
+    StatusViewListResponse:
+      type: object
+      description: For api/status.py
+      properties:
+        status:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusViewIndividualResponse'
+      required:
+      - status
+    TransactionFlag:
+      type: object
+      description: Individual child response
+      properties:
+        flag:
+          type: string
+          description: ie "is_regular"
+      required:
+      - flag
+    Translator:
+      type: object
+      properties:
+        parameter:
+          type: string
+          format: uri
+        data:
+          type: string
+          format: uri
+      required:
+      - data
+      - parameter
+    TranslatorViewResponse:
+      type: object
+      properties:
+        request_guid:
+          type: string
+          maxLength: 36
+      required:
+      - request_guid
+    UploadAVImage:
+      type: object
+      description: Serialize AV image data and type
+      properties:
+        guid:
+          type: string
+          description: Request GUID
+          maxLength: 255
+        type:
+          type: string
+          description: One of face, front, rear corresponding to image content
+          maxLength: 6
+        data:
+          type: string
+          format: uri
+          description: base64 encoded binary data of image
+      required:
+      - data
+      - guid
+      - type
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Auth
+      description: All API hits require an Authentication Header to be submitted ("Auth"),
+        with your Merchant API Key
+    Webhook HMAC:
+      type: apiKey
+      in: header
+      name: X-Mac-Signature
+      description: Webhook callbacks include the request body hashed with your Legacy
+        API key. Verify the hash to authenticate the request.
+tags:
+- name: bank iframe
+  externalDocs:
+    description: Review implementation details here
+    url: https://s3-ca-central-1.amazonaws.com/inverite-static-montreal/api-docs/Inverite+Verification+API+%28Bank+Iframe%29.pdf
+  description: "The iFrame method of creating a request is a\n    simple and effective\
+    \ way to\n    create requests with Inverite. It will provide you the ability to\
+    \ easily\n    insert an iFrame into your customer process (typically, after all\
+    \ customer\n    information and sign-up has taken place) to perform a bank verification.\n\
+    \n    \nTo create an iframe, you pass the allowed parameters as query parameters.\
+    \     Please view below for valid parameters. The constructed URL will be the\
+    \     src URL for the iframe.     An example of a constructed url will be\n\n\
+    ```\n\n\"https://www.inverite.com/customer/web/create?email=test@hotmail.com&site=YourSiteSlug&firstname=Test&middlename=Middle&lastname=Person&province=BC&referenceid=YourSiteName.com_unique_id_here\"\
+    \n```\n\n    \nIf you wish to secure your your iframe creation URL to your website,\n\
+    \    please provide the URL of the page in which the iframe will be embedded.\n\
+    \    This will prevent anyone from guessing your iframe URL, and creating requests\n\
+    \    you did not want.\n\n    \nThe results of your verifications are available\
+    \ either through your\n    Merchant Login, located at https://www.inverite.com/merchant/\
+    \ or, they can\n    be posted back to your Loan Management System via our webhook\
+    \ mechanism.\n    If you wish to configure a webhook URL, please view the    \
+    \ <a href='/documentation/#tag/webhook'>documentation</a>,     or contact merchantsupport@inverite.com\n\
+    \n    \nIf you wish for your page to be notified that an iframe request has  \
+    \   completed, the following javascript may be included in your containing   \
+    \  page to react     to a successful verification. Please note, **you must provide\
+    \ the URL of\n    your containing page for this to work.**\n\n\n```javascript\n\
+    \nfunction listener(event) {\n  if (event.origin.match(\"https://(sandbox|live|www)\\\
+    .inverite\\.com\")){\n      if (event.data === \"success\") {\n          // perform\
+    \ success operations here\n      }\n      return;\n  }\n}\nif (window.addEventListener)\
+    \ {\n    window.addEventListener(\"message\", listener, false)\n} else {\n   \
+    \ attachEvent(\"onmessage\", listener)\n}\n```\n\n\n<h3>Expanded Lifecycle Events</h3>\n\
+    \nInverite is transitioning to a more consistent and extensible structure for\
+    \ events and webhooks. The success event described above will continue to be supported\
+    \ for some time. If and when it is retired Merchant Support will contact you in\
+    \ advance.\n\nIf enabled for your merchant account, the Inverite iframe will publish\
+    \ an event after the user submits their bank credentials and data collection has\
+    \ begun.\n\n```javascript\n{\n    type: \"ibv.data_collection.started\",\n   \
+    \ content: {\n        request: {\n            guid: \"<UUID>\",\n            type:\
+    \ \"bankverify\",\n            status: \"Processing\",\n        },\n        site:\
+    \ {\n            id: <your integer site ID here>,\n        },\n        customer:\
+    \ {\n            reference_id: \"<provided customer reference ID here>\",\n  \
+    \      }\n    }\n}\n```\n\nWhen the iframe session is completed, it will publish\
+    \ another event.\n\n```javascript\n{\n    type: \"ibv.request.completed\",\n \
+    \   content: {\n        request: {\n            guid: \"<UUID>\",\n          \
+    \  status: \"Verified\",\n        },\n        site: {\n            id: <your integer\
+    \ site ID here>,\n        },\n        customer: {\n            reference_id: \"\
+    <provided customer reference ID here>\",\n        }\n    }\n}\n```\n\nWhen the\
+    \ iframe session encounters an error, it will publish another event.\n\n```javascript\n\
+    {\n    type: \"ibv.data_collection.error\",\n    content: {\n        request:\
+    \ {\n            guid: \"<UUID>\",\n            status: \"<one of error statuses>\"\
+    , //\"Attempted but failed\", \"Setup MFA\", \"Confirm profile\", \"No notification\"\
+    , \"Update password\", \"Failed MFA\", \"Account locked\", \"Setup account\",\
+    \ \"MFA timed out\", \"Requires a new link\", \"No device\", \"Authentication\
+    \ failed\", \"Bank is unavailable\"\n        },\n        site: {\n           \
+    \ id: <your integer site ID here>,\n        },\n        customer: {\n        \
+    \    reference_id: \"<provided customer reference ID here>\",\n        }\n   \
+    \ }\n}\n```\n\nWhen the iframe session hasn't started, it will publish the following\
+    \ event.\n\n```javascript\n{\n    type: \"ibv.request.start_page_loaded\",\n \
+    \   content: {\n        request: {\n            guid: \"<UUID>\",\n          \
+    \  status: \"Not Started\",\n        },\n        site: {\n            id: <your\
+    \ integer site ID here>,\n        },\n        customer: {\n            reference_id:\
+    \ \"<provided customer reference ID here>\",\n        }\n    }\n}\n```\n\nAny\
+    \ new events and webhooks published by Inverite in the future will have this structure.\
+    \ To become an early adopter and enable these events for your merchant account\
+    \ please contact Merchant Support.\n\nAn example of how you might handle events\
+    \ is as follows.\n\n```javascript\nfunction listener(event) {\nif (event.origin.match(\"\
+    https://(sandbox|live|www)\\.inverite\\.com\")){\n    if (event.data.type ===\
+    \ \"ibv.data_collection.started\") {\n        // perform post-login operations\
+    \ with inverite data from event.data.content\n    } else if (event.data.type ===\
+    \ \"ibv.request.completed\") {\n        // perform success operations here\n \
+    \   } else if (event.data.type === \"ibv.data_collection.error\") {\n        //\
+    \ perform error operations here\n    } else if (event.data.type === \"ibv.request.start_page_loaded\"\
+    ) {\n        // perform related operations here\n    }\n    return;\n}\n}\nif\
+    \ (window.addEventListener) {\n    window.addEventListener(\"message\", listener,\
+    \ false)\n} else {\n    attachEvent(\"onmessage\", listener)\n}\n```\n"
+- name: bank
+  externalDocs:
+    description: Review implementation details here
+    url: https://s3-ca-central-1.amazonaws.com/inverite-static-montreal/api-docs/Inverite+Verification+API+%28Bank%29.pdf
+  description: |
+    <img src="/cdn/api_schema/standard_api_schema.png">
+        <br>
+        Test Accounts    <table><tr><th>Description</th><th>Username</th><th>Password</th><th>MFA</th></tr><tr><td>Successful Verification, No Challenge</td><td>success</td><td>(any)</td><td></td></tr><tr><td>Successful Verification, Multiple Accounts</td><td>success-multiple-accounts</td><td>(any)</td><td></td></tr><tr><td>Failed Verification</td><td>fail</td><td>(any)</td><td></td></tr><tr><td>Successful Verification with Challenge Question (success)</td><td>success-question</td><td>(any)</td><td>(any) except "wrong"</td></tr><tr><td>Failed Verification with Challenge Question</td><td>success-question</td><td>(any)</td><td>wrong</td></tr><tr><td>Successful Verification with Challenge Image</td><td>success-image</td><td>(any)</td><td>click image</td></tr><tr><td>Succeessful Verification with Multiple Questions</td><td>success-multiple</td><td>(any)</td><td>(any)</td></tr><tr><td>Successful Verification with Multi Factor Authentication</td><td>success-mfa</td><td>(any)</td><td>(any)</td></tr></table>
+- name: age
+  externalDocs:
+    description: Review implementation details here
+    url: https://s3-ca-central-1.amazonaws.com/inverite-static-montreal/api-docs/Inverite+Verification+API+%28Age%29.pdf
+  description: |
+    <img src="/cdn/api_schema/standard_api_schema.png">    <br>    The returned iframe URL can be embedded in a webpage in your customer
+        process.  When the customer completes the process, you can use a javascript
+        event listener to move forward in your customer process, as well as a
+        webhook sent directly to your server. In order to provide a seamless
+        customer experience, the iframe is intended to be embedded in your customer
+        process. If you provide the URL of your containing web page,
+        the success or failure page can communicate to a listener by checking
+
+
+    ```
+
+    function  listener (event){
+       if (event.origin == "https://sandbox.inverite.com"  ||
+          event.origin == "https://live.inverite.com" ||
+          event.origin == "https://www.inverite.com" )
+          {
+               var data = event.data;
+               if (data.verified == 1) {
+                    // perform success events here
+               }
+               else {
+                    // perform failure events
+               }
+      }
+    }
+
+    if (window.addEventListener){
+       addEventListener("message", listener, false)
+    }
+    else {
+       attachEvent("onmessage", listener)
+    }
+    ```
+- name: micro check
+  description: <img src='/cdn/logo/microcheck-logo.png' width='300'>            <br/><br/>            With
+    Micro Check, all alternative loans requested by             individuals will be
+    available in one place and updated regularly.             This centralized database
+    is shared amongst lenders to make sure there             isn’t any delay or error
+    during processing time.
+- name: refresh
+  externalDocs:
+    description: Find more info here
+    url: https://s3-ca-central-1.amazonaws.com/inverite-static-montreal/api-docs/Inverite+Verification+API+%28Refresh%29.pdf
+  description: <img src="/cdn/api_schema/refresh_api_schema.png">            <br>            The
+    Refresh API is used to instantly refresh data from a             previously accessed
+    customer account using stored information, so             that the customer is
+    not involved in the process.
+- name: risk
+  externalDocs:
+    description: Find more info here
+    url: https://s3-ca-central-1.amazonaws.com/inverite-static-montreal/api-docs/Inverite+Verification+API+%28Risk%29.pdf
+  description: <img src="/cdn/api_schema/risk_api_schema.png">            <br>            The
+    Risk API is used to generate Risk score from a previously             accessed
+    customer account using stored information,             so that the customer is
+    not involved in the process.
+- name: data
+  description: "\n    \nThis section will help you understand how to interpret banking\
+    \     verification results returned via our Webhook or Fetch API. These     sections\
+    \ of the response data contain information that can help you     determine the\
+    \ risk level of the customer.     \n \\- Our <a href='/documentation/#section/Transaction-Insights/Pay-Schedule'>\
+    \    Pay Schedule Predictor</a> reveals past and future predicted     employment\
+    \ payment details, including frequency, amount, income, and     more. This is\
+    \ useful to determine the customer's next payment date.    \n \\- Our <a href='/documentation/#section/Transaction-Insights/Flags'>\
+    \    Transaction Flags</a> can identify the nature of each transaction     details.\
+    \ This allows you to quickly analyze the customer's spending     habits.    \n\
+    \ \\- To summarize the information for your convenience, we provide a     <a href='/documentation/#section/Transaction-Insights/Statistics'>\
+    \    Statistics</a> section for you to categorize the customer at ease.     The\
+    \ statistics section leverages our transaction flags to extract     valuable information\
+    \ for a quick overview into the customer's     financial health.     \n## Pay\
+    \ Schedule    \nFor each detected account, we will determine zero or more pay\
+    \     schedules    \n<table><tr><th>Name</th><th>Definition/Example</th></tr><tr><td>frequency</td><td>bi_weekly,\
+    \ thursday</td></tr><tr><td>payment</td><td>list of recent detected payroll payments\
+    \ with dates and amounts confidence</td></tr><tr><td>income type</td><td>employment,\
+    \ government assistance etc</td></tr><tr><td>monthly income</td><td>total estimated\
+    \ monthly income</td></tr><tr><td>details</td><td>employer descriptor</td></tr><tr><td>future\
+    \ payments</td><td>list of next 4 expected payroll dates</td></tr></table>\n \
+    \   \n## Flags    \nEach transaction may have zero or more flags associated with\
+    \ it.\n    \n<table><tr><th>Name</th><th>Definition</th></tr><tr><td>is_start_overdraft</td><td>transaction\
+    \ caused account to enter overdraft</td></tr><tr><td>is_in_overdraft</td><td>transaction\
+    \ occured while account in overdraft</td></tr><tr><td>is_end_overdraft</td><td>transaction\
+    \ caused account to exit overdraft</td></tr><tr><td>is_payroll</td><td>payroll\
+    \ deposit</td></tr><tr><td>is_return</td><td>returned or bounced transaction</td></tr><tr><td>is_payday</td><td>Payday\
+    \ loan</td></tr><tr><td>is_payday_return</td><td>returned Payday loan payment</td></tr><tr><td>is_bankruptcy_trustee</td><td>transaction\
+    \ was with a known bankruptcy trustee</td></tr><tr><td>is_inconsistent</td><td>reported\
+    \ running balance inconsistent with previous transaction</td></tr><tr><td>is_loan</td><td>transaction\
+    \ is a loan payment</td></tr><tr><td>is_regular</td><td>transactions that do not\
+    \ have any other flags are automatically assigned the is_regular flag.</td></tr></table>\n\
+    \    \n## Statistics    \n### Summary    \nTransaction credit and debits are counted\
+    \ (number of transactions)     and totaled (sum of transactions) over 30, 60,\
+    \ 90, 180 and 365 day     intervals. There are also breakdown of loans, overdraft,\
+    \ payday,     returns, has_x_days (where x denotes number of days,     this means\
+    \ does the account have x of days with history),     and mean_closing_balance_x\
+    \ over the same     specified intervals. Transaction flags such as loans, overdraft,\
+    \     payday, return also have subkeys of net, count, credit debit.\n    \n<table><tr><th>Name</th><th>Definition</th></tr><tr><td>average_monthly_employer_income</td><td>monthly\
+    \ average of transactions with income/paycheck flag</td></tr><tr><td>average_monthly_free_cash_flow</td><td>monthly\
+    \ average of all credit and debit transactions</td></tr><tr><td>average_monthly_govt_income</td><td>monthly\
+    \ average of transaction with income/government flag</td></tr><tr><td>average_monthly_non_employer_income</td><td>monthly\
+    \ average of credit transactions without income/paycheck flag</td></tr><tr><td>current_overdraft</td><td>is\
+    \ account currently in overdraft</td></tr><tr><td>days_of_history</td><td>number\
+    \ of days from today to earliest transaction date</td></tr><tr><td>employer_income_30_to_average</td><td>ratio\
+    \ of income in past 30 days to average_monthly_employer_income</td></tr><tr><td>mean_balance_after_payroll</td><td>average\
+    \ balance within 3 days after each payroll</td></tr><tr><td>mean_closing_balance</td><td>average\
+    \ closing balance of last 90 days</td></tr><tr><td>total_deposit_trend</td><td>ratio\
+    \ of past 30 days credit to monthly average credit deposit</td></tr></table>\n\
+    \    \n### Monthly Stats\n    \nEach monthly statistic key contains sub-keys for\
+    \ 0..12 months ago     or statistics divided in monthly portions.     \n<table><tr><th>Name</th><th>Definition</th></tr><tr><td>employer_monthly_income</td><td>monthly\
+    \ sum of transactions with income/paycheck flag</td></tr><tr><td>employer_monthly_income_freq</td><td>monthly\
+    \ count of transactions with income/paycheck flag</td></tr><tr><td>government_monthly_income</td><td>monthly\
+    \ sum of transactions with income/government flag</td></tr><tr><td>government_monthly_income_freq</td><td>monthly\
+    \ count of transactions with income/government flag</td></tr><tr><td>total_monthly_credit</td><td>sum\
+    \ monthly credit</td></tr><tr><td>monthly_category_stats</td><td>monthly summary\
+    \ of transaction categories</td></tr></table>\n    \n### Quarterly Stats    \n\
+    Quarterly statistic keys are grouped as sub keys of each quarter     and are non-cumulative.\
+    \ The sub-keys are quarter_3_months,\n    quarter_6_months, quarter_9_months,\
+    \ quarter_12_months,     quarter_all_time    \n<table><tr><th>Name</th><th>Definition</th></tr><tr><td>amount_of_deposit</td><td>sum\
+    \ of deposit amount</td></tr><tr><td>amount_of_withdrawal</td><td>sum of withdrawal\
+    \ amount</td></tr><tr><td>average_amount_of_deposit</td><td>average monthly deposit</td></tr><tr><td>average_amount_of_withdrawal</td><td>average\
+    \ monthly withdrawal</td></tr><tr><td>average_amount_overdraft</td><td>average\
+    \ balance when in overdraft</td></tr><tr><td>average_balance</td><td>average balance</td></tr><tr><td>average_number_nsf</td><td>average\
+    \ monthly number of not sufficient funds</td></tr><tr><td>average_number_of_deposit</td><td>average\
+    \ monthly number of deposit</td></tr><tr><td>average_number_of_withdrawal</td><td>average\
+    \ monthly number of withdrawal</td></tr><tr><td>highest_balance</td><td>highest\
+    \ balance in the timeframe</td></tr><tr><td>highest_deposit</td><td>highest deposit\
+    \ in the timeframe</td></tr><tr><td>highest_overdraft</td><td>highest overdraft\
+    \ balance in the timeframe</td></tr><tr><td>highest_withdrawal</td><td>highest\
+    \ withdrawal in the timeframe</td></tr><tr><td>lowest_balance</td><td>lowest balance\
+    \ in the timeframe</td></tr><tr><td>lowest_deposit</td><td>lowest deposit in the\
+    \ timeframe</td></tr><tr><td>lowest_overdraft</td><td>lowest overdraft balance\
+    \ in the timeframe</td></tr><tr><td>lowest_withdrawal</td><td>lowest withdrawal\
+    \ in the timeframe</td></tr><tr><td>newest_transaction</td><td>newest transaction\
+    \ in the timeframe</td></tr><tr><td>oldest_transaction</td><td>oldest transaction\
+    \ in the timeframe</td></tr></table>\n    \n### Transaction Categories    \nClick\
+    \ to expand    \n<ul><li><span class='caret'>auto_and_transport</span><ul class='nested'><li>car_rental</li><li>gas_and_fuel</li><li>parking</li><li>public_transportation</li><li>service_and_parts</li><li>taxi</li></ul></li><li><span\
+    \ class='caret'>bills_and_utilities</span><ul class='nested'><li>internet</li><li>phone</li><li>television</li><li>utilities</li></ul></li><li><span\
+    \ class='caret'>business_services</span><ul class='nested'><li>accounting</li><li>advertising</li><li>office_supplies</li><li>shipping</li></ul></li><li><span\
+    \ class='caret'>education</span><ul class='nested'><li>books_and_supplies</li><li>student_loan</li><li>tuition</li></ul></li><li><span\
+    \ class='caret'>entertainment</span><ul class='nested'><li>amusement</li><li>arts</li><li>gambling</li><li>games</li><li>movies_and_music</li><li>newspapers_and_magazines</li></ul></li><li><span\
+    \ class='caret'>fees_and_charges</span><ul class='nested'><li>bankruptcy</li><li>collections_agency</li><li><span\
+    \ class='caret'>loans</span><ul class='nested'><li>auto</li><li>high_cost</li><li>pawn</li><li>payday</li></ul></li><li><span\
+    \ class='caret'>provider_fee</span><ul class='nested'><li><span class='caret'>penalty</span><ul\
+    \ class='nested'><li>nsf</li><li>overdraft</li><li>stop_payment</li></ul></li><li>recurring</li></ul></li><li><span\
+    \ class='caret'>service_fee</span><ul class='nested'><li>laundromat</li></ul></li><li>taxes</li><li>union</li></ul></li><li><span\
+    \ class='caret'>food_and_dining</span><ul class='nested'><li>alcohol_and_bars</li><li>cafes_and_restaurants</li><li>groceries</li><li>marijuana</li></ul></li><li><span\
+    \ class='caret'>gifts_and_donations</span><ul class='nested'><li>charity</li><li>gifts</li></ul></li><li><span\
+    \ class='caret'>health_and_fitness</span><ul class='nested'><li>doctor</li><li>personal_care</li><li>pharmacy</li><li>sports</li><li>wellness</li></ul></li><li><span\
+    \ class='caret'>home</span><ul class='nested'><li>home_improvement</li><li>home_services</li><li>home_supplies</li><li>mortgage</li><li>mortgage_and_rent</li><li>rent</li></ul></li><li><span\
+    \ class='caret'>income</span><ul class='nested'><li>bonus</li><li>child_support</li><li>government</li><li>investment_income</li><li>paycheck</li><li>pension</li></ul></li><li><span\
+    \ class='caret'>insurance</span><ul class='nested'><li>car_insurance</li><li>health_insurance</li><li>life_insurance</li><li>property_insurance</li></ul></li><li><span\
+    \ class='caret'>kids</span><ul class='nested'><li>baby_supplies</li><li>babysitter_and_daycare</li><li>toys</li></ul></li><li><span\
+    \ class='caret'>pets</span><ul class='nested'><li>pet_food_and_supplies</li><li>pet_grooming</li><li>veterinary</li></ul></li><li><span\
+    \ class='caret'>shopping</span><ul class='nested'><li>clothing</li><li>electronics_and_software</li><li>sporting_goods</li></ul></li><li><span\
+    \ class='caret'>transfer</span><ul class='nested'><li>atm</li><li>credit_card</li><li>email</li><li>wire</li></ul></li><li><span\
+    \ class='caret'>travel</span><ul class='nested'><li>hotel</li><li>transportation</li><li>vacation</li></ul></li><li>uncategorized</li></ul>\n"
+x-tagGroups:
+- name: Data
+  tags:
+  - webhook
+  - data
+- name: API
+  tags:
+  - bank iframe
+  - bank
+  - age
+  - micro check
+  - risk
+  - business sector
+  - refresh
+x-webhooks:
+  webhook:
+    post:
+      summary: webhook
+      description: "Webhook is the easiest way to receive information            on\
+        \ completed requests. When combined with iFrame method, this            is\
+        \ the configuration that requires the least set up to get            you up\
+        \ and going. By providing a URL endpoint that accepts a            POST with\
+        \ JSON data to us, we            will automatically send the customer information\
+        \ to the URL            endpoint as soon as it is completed. \n        \n\
+        The webhook response follows the same JSON format as             our Fetch\
+        \ API for your convenience. With webhook configured,             you can streamline\
+        \ data retrieval through the configured endpoint.\n\n        \nTo authenticate\
+        \ a webhook request as originating from Inverite you may           verify\
+        \ the hash provided in the X-Mac-Signature header. This is the           URL-safe\
+        \ base64 encoded HMAC-SHA256 hash of the request body using           the\
+        \ UTF-8 encoding of your Legacy API key as the hash key."
+      operationId: webhook
+      tags:
+      - webhook
+      responses:
+        '200':
+          description: Indicates success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchResponse'
+              examples:
+                Bank Verification:
+                  value:
+                    name: John Doe
+                    complete_datetime: '2021-02-09 14:26:55'
+                    referenceid: null
+                    request: 06C04AF4-BC85-4BE8-9CFA-E31CF03C3F60
+                    status: Verified
+                    type: bankverify
+                    accounts:
+                    - type: chequing
+                      membership_number: '1231231'
+                      account_description: Everyday cheq
+                      institution: '010'
+                      account: '1234567'
+                      routing_code: ''
+                      transit: '12345'
+                      bank_pdf_statements:
+                      - name: pdf1
+                        link: https://www.inverite.com
+                      statistics:
+                        key1: string1
+                        key2:
+                          key3: string2
+                      bank: Test Bank
+                      transactions:
+                      - date: '2021-02-09'
+                        details: Branch Transaction EFT DEBIT REVERSAL A. FARBER PARTNERS
+                          LTD
+                        category: fees_and_charges/bankruptcy
+                        credit: '125.00'
+                        debit: ''
+                        flags:
+                        - is_bankruptcy_trustee
+                        - is_return
+                        balance: '92.53'
+                      payschedules:
+                      - score: 1
+                        account: 010-12345-1234567
+                        details: Payroll ACME JOB CO
+                        income_type: monthly_income/paycheck
+                        monthly_income: '1899.72'
+                        frequency: bi_weekly:parity_0:tuesday
+                        payments:
+                        - date: '2021-02-09'
+                          details: Payroll ACME JOB CO
+                          category: ''
+                          credit: '863.92'
+                          debit: ''
+                          flags:
+                          - is_payroll
+                          balance: '865.82'
+                        future_payments:
+                        - '2021-02-23'
+                        - '2021-03-09'
+                        missed_payments: []
+                    all_bank_pdf_statements:
+                    - name: pdf1
+                      link: https://www.inverite.com
+                    address: 1234 Main Street, Vancouver, V7L1G9
+                    contacts:
+                    - type: email
+                      contact: johndoe@gmail.com
+                    - type: phone
+                      contact: (604) 555-1234
+                    account_validations:
+                    - type: name_match
+                      result: PASS
+                      confidence: 1.0
+                      details: Exact match for John Doe.
+                Age Verification:
+                  value:
+                    request: 9633F964-513E-11E7-A970-6EC618044181
+                    referenceid: Customer_123456
+                    status: Approved
+                    firstname: Example
+                    middlename: Middle
+                    lastname: Name
+                    birthdate: '1992-05-06'
+                    similarity: 89
+                    city: Vancouver
+                    address: 1234 Main Street
+                    province: BC
+                    postal: A1A 1A1
+                    calculated_age: '25'
+                    gender: M
+                Age Verification (with liveness check):
+                  value:
+                    request: 9633F964-513E-11E7-A970-6EC618044181
+                    referenceid: Customer_123456
+                    status: Approved
+                    firstname: Example
+                    middlename: Middle
+                    lastname: Name
+                    birthdate: '1992-05-06'
+                    similarity: 89
+                    city: Vancouver
+                    address: 1234 Main Street
+                    province: BC
+                    postal: A1A 1A1
+                    calculated_age: '25'
+                    gender: M
+                    liveness_check:
+                      fraud_check: Pass
+                      liveness_confidence: 78
+                Micro Check:
+                  value:
+                    complete_datetime: '2019-08-24T14:15:22Z'
+                    referenceid: Customer_123456
+                    request: 9633F964-513E-11E7-A970-6EC618044181
+                    type: microcheck
+                    status: Not Started
+                    microcheck_data:
+                      results: []
