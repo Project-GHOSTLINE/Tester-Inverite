@@ -1351,28 +1351,71 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
                 </div>
             </div>
 
-            ${analyse.preteurs.paiements.length > 0 ? `
+            ${analyse.preteurs.groupes && analyse.preteurs.groupes.length > 0 ? `
                 <div style="margin-top: 25px;">
-                    <strong style="font-size: 16px; display: block; margin-bottom: 10px; color: #d32f2f;">
-                        💸 PAIEMENTS AUX PRÊTEURS (${analyse.preteurs.paiements.length} transactions):
+                    <strong style="font-size: 18px; display: block; margin-bottom: 15px; color: #f57c00;">
+                        🏦 DÉTAILS PAR PRÊTEUR (${analyse.preteurs.groupes.length} prêteurs distincts):
                     </strong>
-                    ${analyse.preteurs.paiements.map((trans: any, index: number) => {
-                        const detailsEncoded = Buffer.from(trans.details).toString('base64');
+                    ${analyse.preteurs.groupes.map((preteur: any, preteurIndex: number) => {
                         return `
-                        <div class="preteur-item" style="padding: 12px; margin: 8px 0; background: #ffebee; border-left: 4px solid #d32f2f; position: relative;">
-                            <button class="exclude-btn" data-details="${detailsEncoded}"
-                                    style="position: absolute; top: 10px; right: 10px; background: #d32f2f; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
-                                ❌ Enlever
+                        <div style="margin-bottom: 15px;">
+                            <button class="accordion-toggle" data-target="preteur-${preteurIndex}" style="
+                                width: 100%;
+                                padding: 14px 20px;
+                                background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 15px;
+                                font-weight: bold;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                box-shadow: 0 2px 8px rgba(245, 124, 0, 0.3);
+                                transition: all 0.2s;
+                            ">
+                                <span>
+                                    🏢 ${preteur.nom}
+                                    <span style="margin-left: 15px; font-weight: normal; opacity: 0.9;">
+                                        (${preteur.count} transactions)
+                                    </span>
+                                </span>
+                                <span style="display: flex; gap: 20px; align-items: center;">
+                                    ${preteur.countPaiements > 0 ? `<span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;">💸 ${preteur.countPaiements} paiements: -${preteur.totalPaiements.toFixed(2)}$</span>` : ''}
+                                    ${preteur.countRecus > 0 ? `<span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;">💰 ${preteur.countRecus} reçus: +${preteur.totalRecus.toFixed(2)}$</span>` : ''}
+                                    <span class="accordion-icon" style="font-size: 20px;">▼</span>
+                                </span>
                             </button>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding-right: 90px;">
-                                <strong style="color: #d32f2f;">#${index + 1} - ${trans.date}</strong>
-                                <strong style="color: #d32f2f; font-size: 16px;">${trans.montant.toFixed(2)}$</strong>
-                            </div>
-                            <div style="font-size: 13px; color: #333; word-break: break-word; margin-top: 5px;">
-                                ${trans.details}
-                            </div>
-                            <div style="font-size: 11px; color: #777; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ffcdd2;">
-                                💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
+
+                            <div id="preteur-${preteurIndex}" class="accordion-content" style="display: none; padding: 15px; background: #fff3e0; border-radius: 0 0 8px 8px; margin-top: -8px;">
+                                ${preteur.transactions.map((trans: any, index: number) => {
+                                    const detailsEncoded = Buffer.from(trans.details).toString('base64');
+                                    const isCredit = trans.type === 'recu';
+                                    const bgColor = isCredit ? '#e8f5e9' : '#ffebee';
+                                    const borderColor = isCredit ? '#4caf50' : '#d32f2f';
+                                    const textColor = isCredit ? '#2e7d32' : '#c62828';
+                                    const icon = isCredit ? '💰 REÇU' : '💸 PAYÉ';
+
+                                    return `
+                                    <div class="preteur-item" style="padding: 12px; margin: 8px 0; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 6px; position: relative;">
+                                        <button class="exclude-btn" data-details="${detailsEncoded}"
+                                                style="position: absolute; top: 10px; right: 10px; background: ${borderColor}; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
+                                            ❌ Enlever
+                                        </button>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding-right: 90px;">
+                                            <strong style="color: ${textColor};">${icon} - ${trans.date}</strong>
+                                            <strong style="color: ${textColor}; font-size: 16px;">${isCredit ? '+' : '-'}${trans.montant.toFixed(2)}$</strong>
+                                        </div>
+                                        <div style="font-size: 13px; color: #333; word-break: break-word; margin-top: 5px;">
+                                            ${trans.details}
+                                        </div>
+                                        <div style="font-size: 11px; color: #777; margin-top: 5px; padding-top: 5px; border-top: 1px solid ${isCredit ? '#c8e6c9' : '#ffcdd2'};">
+                                            💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_institution}
+                                        </div>
+                                    </div>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                         `;
@@ -1380,34 +1423,6 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
                 </div>
             ` : ''}
 
-            ${analyse.preteurs.recus.length > 0 ? `
-                <div style="margin-top: 25px;">
-                    <strong style="font-size: 16px; display: block; margin-bottom: 10px; color: #f57c00;">
-                        💰 PRÊTS REÇUS DES PRÊTEURS (${analyse.preteurs.recus.length} transactions):
-                    </strong>
-                    ${analyse.preteurs.recus.map((trans: any, index: number) => {
-                        const detailsEncoded = Buffer.from(trans.details).toString('base64');
-                        return `
-                        <div class="preteur-item" style="padding: 12px; margin: 8px 0; background: #fff3e0; border-left: 4px solid #f57c00; position: relative;">
-                            <button class="exclude-btn" data-details="${detailsEncoded}"
-                                    style="position: absolute; top: 10px; right: 10px; background: #f57c00; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
-                                ❌ Enlever
-                            </button>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; padding-right: 90px;">
-                                <strong style="color: #f57c00;">#${index + 1} - ${trans.date}</strong>
-                                <strong style="color: #f57c00; font-size: 16px;">${trans.montant.toFixed(2)}$</strong>
-                            </div>
-                            <div style="font-size: 13px; color: #333; word-break: break-word; margin-top: 5px;">
-                                ${trans.details}
-                            </div>
-                            <div style="font-size: 11px; color: #777; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ffe0b2;">
-                                💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
-                            </div>
-                        </div>
-                        `;
-                    }).join('')}
-                </div>
-            ` : ''}
         </div>
 
         <!-- SECTION 8: TOUTES LES TRANSACTIONS (90 DERNIERS JOURS) -->
