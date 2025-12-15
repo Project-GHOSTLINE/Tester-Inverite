@@ -1331,41 +1331,32 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
                 </strong>
             </div>
 
-            ${analyse.transactions_90_jours.map((trans: any, idx: number) => {
-                const isDebit = trans.debit && trans.debit !== '';
-                const montant = isDebit ? parseFloat(trans.debit) : parseFloat(trans.credit || '0');
-                const typeColor = isDebit ? '#d32f2f' : '#388e3c';
-                const typeBg = isDebit ? '#ffebee' : '#e8f5e9';
-                const typeLabel = isDebit ? 'DÉBIT' : 'CRÉDIT';
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                ${analyse.transactions_90_jours.map((trans: any, idx: number) => {
+                    const isDebit = trans.debit && trans.debit !== '';
+                    const montant = isDebit ? parseFloat(trans.debit) : parseFloat(trans.credit || '0');
+                    const typeColor = isDebit ? '#d32f2f' : '#388e3c';
+                    const typeBg = isDebit ? '#ffebee' : '#e8f5e9';
+                    const typeIcon = isDebit ? '📤' : '📥';
 
-                return `
-                    <div style="padding: 12px; margin: 10px 0; background: ${typeBg}; border-left: 4px solid ${typeColor}; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div>
-                                <strong style="color: #333; font-size: 14px;">#${idx + 1}</strong>
-                                <span style="color: #666; font-size: 13px; margin-left: 10px;">📅 ${trans.date}</span>
+                    return `
+                        <div style="padding: 10px; background: ${typeBg}; border-left: 3px solid ${typeColor}; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="color: #666; font-size: 12px; font-weight: bold;">📅 ${trans.date}</span>
+                                <span style="color: ${typeColor}; font-size: 16px; font-weight: bold;">
+                                    ${typeIcon} ${isDebit ? '-' : '+'}${montant.toFixed(2)}$
+                                </span>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="color: ${typeColor}; font-size: 18px; font-weight: bold;">
-                                    ${isDebit ? '-' : '+'}${montant.toFixed(2)}$
-                                </div>
-                                <div style="font-size: 10px; color: ${typeColor}; font-weight: bold; margin-top: 2px;">
-                                    ${typeLabel}
-                                </div>
+                            <div style="font-size: 12px; color: #333; margin: 5px 0; line-height: 1.3; min-height: 36px;">
+                                ${trans.details}
+                            </div>
+                            <div style="font-size: 10px; color: #888; margin-top: 6px; padding-top: 6px; border-top: 1px solid ${isDebit ? '#ffcdd2' : '#c8e6c9'};">
+                                📂 ${trans.category || 'Non classifié'}
                             </div>
                         </div>
-                        <div style="font-size: 13px; color: #333; margin: 8px 0; line-height: 1.4;">
-                            📝 ${trans.details}
-                        </div>
-                        <div style="font-size: 11px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e0e0e0;">
-                            📂 <strong>Catégorie:</strong> ${trans.category || 'Non classifié'}
-                        </div>
-                        <div style="font-size: 11px; color: #666; margin-top: 5px;">
-                            💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
+                    `;
+                }).join('')}
+            </div>
         </div>
 
         <a href="/" class="back-button">← Analyser un autre fichier</a>
