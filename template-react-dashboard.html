@@ -182,7 +182,7 @@
                     // Si c'est un prêteur spécifique (preteur_0, preteur_1, etc.)
                     if (selectedCategory.startsWith('preteur_')) {
                         const idx = parseInt(selectedCategory.replace('preteur_', ''));
-                        const preteurData = analyse.preteurs?.groupes?.[idx];
+                        const preteurData = data.preteurs?.groupes?.[idx];
                         if (preteurData) {
                             // Filtrer par les transactions exactes de ce prêteur
                             return filteredByAccount.filter(t =>
@@ -629,7 +629,7 @@
                             }
 
                             {/* Cartes pour chaque prêteur distinct */}
-                            {analyse.preteurs && analyse.preteurs.groupes && analyse.preteurs.groupes.map((preteur, idx) => {
+                            {data.preteurs && data.preteurs.groupes && data.preteurs.groupes.map((preteur, idx) => {
                                 const preteurKey = `preteur_${idx}`;
                                 const isSelected = selectedCategory === preteurKey;
 
@@ -792,15 +792,15 @@
                         </div>
 
                         {/* Section Accordéons Prêteurs */}
-                        {regroupMode && analyse.preteurs && analyse.preteurs.groupes && analyse.preteurs.groupes.length > 0 && (
+                        {regroupMode && data.preteurs && data.preteurs.groupes && data.preteurs.groupes.length > 0 && (
                             <div className="mt-8 bg-white rounded-xl shadow-2xl p-6">
                                 <h2 className="text-2xl font-black text-orange-600 mb-6 flex items-center gap-3">
                                     <Briefcase className="w-8 h-8" />
-                                    🏦 DÉTAILS PAR PRÊTEUR ({analyse.preteurs.groupes.length} prêteurs distincts)
+                                    🏦 DÉTAILS PAR PRÊTEUR ({data.preteurs.groupes.length} prêteurs distincts)
                                 </h2>
 
                                 <div className="space-y-4">
-                                    {analyse.preteurs.groupes.map((preteur, preteurIndex) => {
+                                    {data.preteurs.groupes.map((preteur, preteurIndex) => {
                                         const [isOpen, setIsOpen] = React.useState(false);
 
                                         return (
