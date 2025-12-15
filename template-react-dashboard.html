@@ -457,7 +457,7 @@
                                 <h3 className="text-xl font-bold text-blue-900 mb-4">
                                     💳 Compte #{currentAccountInfo.numero} - {currentAccountInfo.type}
                                 </h3>
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-4 gap-4 mb-6">
                                     <div>
                                         <div className="text-xs text-blue-700 font-semibold mb-1">INSTITUTION</div>
                                         <div className="text-base font-bold text-blue-900">{currentAccountInfo.institution}</div>
@@ -473,6 +473,74 @@
                                     <div>
                                         <div className="text-xs text-blue-700 font-semibold mb-1">SOLDE ACTUEL</div>
                                         <div className="text-2xl font-black text-green-600">{currentAccountInfo.balance_actuelle?.toFixed(2)}$</div>
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-blue-200 pt-4">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        {/* 8 Dernières paies */}
+                                        <div>
+                                            <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                                                <span className="text-green-600">💰</span> 8 DERNIÈRES PAIES
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {(() => {
+                                                    const paies = filteredByAccount
+                                                        .filter(t => {
+                                                            const isPaie = t.details.toLowerCase().includes('salaire') ||
+                                                                          t.details.toLowerCase().includes('paie') ||
+                                                                          t.details.toLowerCase().includes('payroll') ||
+                                                                          t.category?.toLowerCase().includes('income');
+                                                            return isPaie && t.credit && t.credit !== '';
+                                                        })
+                                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                                        .slice(0, 8);
+
+                                                    return paies.map((paie, idx) => (
+                                                        <div key={idx} className="bg-white rounded-lg p-2 shadow-sm">
+                                                            <div className="text-xs text-slate-600">{paie.date}</div>
+                                                            <div className="text-base font-black text-green-600">+{parseFloat(paie.credit).toFixed(2)}$</div>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        </div>
+
+                                        {/* Revenus autres */}
+                                        <div>
+                                            <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                                                <span className="text-purple-600">💵</span> REVENUS AUTRES
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {(() => {
+                                                    const autresRevenus = filteredByAccount
+                                                        .filter(t => {
+                                                            const isIncome = t.category?.toLowerCase().includes('income') ||
+                                                                            t.category?.toLowerCase().includes('transfer/email');
+                                                            const notPaie = !t.details.toLowerCase().includes('salaire') &&
+                                                                           !t.details.toLowerCase().includes('paie') &&
+                                                                           !t.details.toLowerCase().includes('payroll');
+                                                            return isIncome && notPaie && t.credit && t.credit !== '';
+                                                        })
+                                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                                        .slice(0, 5);
+
+                                                    if (autresRevenus.length === 0) {
+                                                        return <div className="text-xs text-slate-500 italic">Aucun autre revenu</div>;
+                                                    }
+
+                                                    return autresRevenus.map((rev, idx) => (
+                                                        <div key={idx} className="bg-white rounded-lg p-2 shadow-sm">
+                                                            <div className="flex justify-between items-center">
+                                                                <div className="text-xs text-slate-600">{rev.date}</div>
+                                                                <div className="text-sm font-bold text-purple-600">+{parseFloat(rev.credit).toFixed(2)}$</div>
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 mt-1 truncate">{rev.details}</div>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
