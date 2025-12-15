@@ -77,6 +77,7 @@
             const [sortColumn, setSortColumn] = useState('date');
             const [sortDirection, setSortDirection] = useState('desc'); // 'asc' ou 'desc'
             const [selectedAccount, setSelectedAccount] = useState(data.comptes.length > 0 ? data.comptes[0].numero : null);
+            const [regroupMode, setRegroupMode] = useState(false); // Mode regrouper: affiche SEULEMENT la catégorie sélectionnée
 
             // Ajouter un ID unique à chaque transaction
             const transactionsWithId = data.transactions.map((t, idx) => ({
@@ -156,8 +157,13 @@
                 }
             };
 
-            // Trier les transactions AVANT de calculer les indices (utiliser filteredByAccount)
-            const sortedTransactions = [...filteredByAccount].sort((a, b) => {
+            // Appliquer le mode regroupement si activé
+            const displayedTransactions = regroupMode && selectedCategory
+                ? filteredByAccount.filter(t => isTransactionInCategory(t, selectedCategory))
+                : filteredByAccount;
+
+            // Trier les transactions AVANT de calculer les indices
+            const sortedTransactions = [...displayedTransactions].sort((a, b) => {
                 let aVal, bVal;
 
                 switch(sortColumn) {
@@ -281,6 +287,24 @@
                     {/* Boutons de navigation flottants */}
                     {selectedCategory && categoryTransactions.length > 0 && (
                         <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+                            {/* Bouton Regrouper */}
+                            <button
+                                onClick={() => setRegroupMode(!regroupMode)}
+                                className={`
+                                    px-4 py-3 rounded-lg font-bold text-sm transition-all duration-200
+                                    ${regroupMode
+                                        ? 'bg-blue-600 text-white shadow-2xl'
+                                        : 'bg-white text-slate-800 shadow-xl hover:shadow-2xl'}
+                                `}
+                                style={{
+                                    boxShadow: regroupMode ? '0 10px 40px rgba(59, 130, 246, 0.5)' : '0 5px 20px rgba(0, 0, 0, 0.2)'
+                                }}
+                            >
+                                {regroupMode ? '📌 Regroupé' : '📋 Tout'}
+                            </button>
+
+                            <div className="h-px bg-slate-300"></div>
+
                             <button
                                 onClick={navigateUp}
                                 disabled={currentIndexInCategory <= 0}
@@ -334,7 +358,12 @@
                                 Dashboard Transactions IBV
                             </h1>
                             <p className="text-slate-600 text-lg">
-                                {data.client} • {filteredByAccount.length} transactions
+                                {data.client} • {sortedTransactions.length}
+                                {regroupMode && selectedCategory ? (
+                                    <span className="text-blue-600 font-bold"> transactions filtrées</span>
+                                ) : (
+                                    <span> transactions</span>
+                                )}
                                 {data.comptes.length > 1 && selectedAccount && (
                                     <span className="ml-2 text-blue-600">
                                         (Compte #{selectedAccount})
