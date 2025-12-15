@@ -8,7 +8,10 @@ const app = express();
 const PORT = 3001;
 
 // Fichier d'exclusions
-const EXCLUSIONS_FILE = path.join(__dirname, 'exclusions.json');
+// Utiliser /tmp/ sur Vercel (lecture seule sinon), __dirname en local
+const EXCLUSIONS_FILE = process.env.VERCEL
+    ? '/tmp/exclusions.json'
+    : path.join(__dirname, 'exclusions.json');
 
 // Charger les exclusions
 function loadExclusions(): string[] {
