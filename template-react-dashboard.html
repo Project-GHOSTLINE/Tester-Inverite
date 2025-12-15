@@ -790,6 +790,114 @@
                                 </table>
                             </div>
                         </div>
+
+                        {/* Section Accordéons Prêteurs */}
+                        {regroupMode && analyse.preteurs && analyse.preteurs.groupes && analyse.preteurs.groupes.length > 0 && (
+                            <div className="mt-8 bg-white rounded-xl shadow-2xl p-6">
+                                <h2 className="text-2xl font-black text-orange-600 mb-6 flex items-center gap-3">
+                                    <Briefcase className="w-8 h-8" />
+                                    🏦 DÉTAILS PAR PRÊTEUR ({analyse.preteurs.groupes.length} prêteurs distincts)
+                                </h2>
+
+                                <div className="space-y-4">
+                                    {analyse.preteurs.groupes.map((preteur, preteurIndex) => {
+                                        const [isOpen, setIsOpen] = React.useState(false);
+
+                                        return (
+                                            <div key={preteurIndex} className="border border-orange-200 rounded-lg overflow-hidden">
+                                                {/* Bouton Accordéon */}
+                                                <button
+                                                    onClick={() => setIsOpen(!isOpen)}
+                                                    className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-left flex justify-between items-center hover:from-orange-600 hover:to-orange-700 transition-all"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Briefcase className="w-6 h-6" />
+                                                        <span className="text-lg">{preteur.nom}</span>
+                                                        <span className="text-sm font-normal opacity-90">
+                                                            ({preteur.count} transactions)
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        {preteur.countPaiements > 0 && (
+                                                            <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                                                                💸 {preteur.countPaiements}: -{preteur.totalPaiements.toFixed(2)}$
+                                                            </span>
+                                                        )}
+                                                        {preteur.countRecus > 0 && (
+                                                            <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                                                                💰 {preteur.countRecus}: +{preteur.totalRecus.toFixed(2)}$
+                                                            </span>
+                                                        )}
+                                                        <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                                                            ▼
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                {/* Contenu Accordéon */}
+                                                {isOpen && (
+                                                    <div className="bg-orange-50 p-4">
+                                                        <div className="space-y-3">
+                                                            {preteur.transactions.map((trans, idx) => {
+                                                                const isCredit = trans.type === 'recu';
+                                                                const bgColor = isCredit ? 'bg-green-50' : 'bg-red-50';
+                                                                const borderColor = isCredit ? 'border-green-500' : 'border-red-500';
+                                                                const textColor = isCredit ? 'text-green-700' : 'text-red-700';
+                                                                const icon = isCredit ? '💰 REÇU' : '💸 PAYÉ';
+
+                                                                return (
+                                                                    <div
+                                                                        key={idx}
+                                                                        className={`${bgColor} border-l-4 ${borderColor} rounded-lg p-4 shadow-sm`}
+                                                                    >
+                                                                        <div className="flex justify-between items-start mb-2">
+                                                                            <span className={`font-bold ${textColor}`}>
+                                                                                {icon} - {trans.date}
+                                                                            </span>
+                                                                            <span className={`text-xl font-black ${textColor}`}>
+                                                                                {isCredit ? '+' : '-'}{trans.montant.toFixed(2)}$
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="text-sm text-slate-700 mb-2">
+                                                                            {trans.details}
+                                                                        </div>
+                                                                        <div className="text-xs text-slate-500 pt-2 border-t border-slate-200">
+                                                                            💳 Compte {trans.compte_numero} ({trans.compte_type}) | {trans.compte_institution}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {/* Résumé du prêteur */}
+                                                        <div className="mt-4 pt-4 border-t-2 border-orange-300 bg-white rounded-lg p-4">
+                                                            <div className="grid grid-cols-3 gap-4 text-center">
+                                                                <div>
+                                                                    <div className="text-xs text-slate-600 uppercase font-semibold">Total transactions</div>
+                                                                    <div className="text-2xl font-black text-orange-600">{preteur.count}</div>
+                                                                </div>
+                                                                {preteur.countPaiements > 0 && (
+                                                                    <div>
+                                                                        <div className="text-xs text-slate-600 uppercase font-semibold">Total payé</div>
+                                                                        <div className="text-2xl font-black text-red-600">-{preteur.totalPaiements.toFixed(2)}$</div>
+                                                                    </div>
+                                                                )}
+                                                                {preteur.countRecus > 0 && (
+                                                                    <div>
+                                                                        <div className="text-xs text-slate-600 uppercase font-semibold">Total reçu</div>
+                                                                        <div className="text-2xl font-black text-green-600">+{preteur.totalRecus.toFixed(2)}$</div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
