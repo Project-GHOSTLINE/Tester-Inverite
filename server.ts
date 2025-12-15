@@ -1631,8 +1631,9 @@ app.post('/upload', upload.single('jsonFile'), (req: Request, res: Response) => 
         // Analyser le JSON
         const analyse = analyseInverite(inveriteData, exclusions);
 
-        // Construire l'URL du serveur
-        const serverURL = `${req.protocol}://${req.get('host')}`;
+        // Construire l'URL du serveur (forcer HTTPS sur Vercel)
+        const protocol = process.env.VERCEL ? 'https' : req.protocol;
+        const serverURL = `${protocol}://${req.get('host')}`;
 
         // Générer le rapport HTML
         const rapportHTML = genererRapportSimple(analyse, serverURL);
