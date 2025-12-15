@@ -597,7 +597,30 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
 }
 
 // ============================================================
-// GÉNÉRATION DU RAPPORT HTML SIMPLE
+// GÉNÉRATION DU DASHBOARD REACT
+// ============================================================
+
+function genererDashboardReact(analyse: any, inveriteData: any, serverURL: string): string {
+    // Préparer les données pour le dashboard React
+    const dashboardData = {
+        client: `${analyse.identite.prenom} ${analyse.identite.nom}`,
+        reference: analyse.identite.reference_id,
+        date: new Date().toISOString(),
+        transactions: analyse.transactions_90_jours || []
+    };
+
+    // Lire le template React
+    const templatePath = path.join(__dirname, 'template-react-dashboard.html');
+    let template = fs.readFileSync(templatePath, 'utf-8');
+
+    // Injecter les données
+    template = template.replace('__DASHBOARD_DATA__', JSON.stringify(dashboardData));
+
+    return template;
+}
+
+// ============================================================
+// GÉNÉRATION DU RAPPORT HTML SIMPLE (ANCIEN)
 // ============================================================
 
 function genererRapportSimple(analyse: any, serverURL: string): string {
@@ -1685,8 +1708,8 @@ app.post('/upload', upload.single('jsonFile'), (req: Request, res: Response) => 
         const protocol = process.env.VERCEL ? 'https' : req.protocol;
         const serverURL = `${protocol}://${req.get('host')}`;
 
-        // Générer le rapport HTML
-        const rapportHTML = genererRapportSimple(analyse, serverURL);
+        // Générer le dashboard React
+        const rapportHTML = genererDashboardReact(analyse, inveriteData, serverURL);
 
         // Générer un ID unique pour le rapport
         const rapportID = crypto.randomBytes(16).toString('hex');
