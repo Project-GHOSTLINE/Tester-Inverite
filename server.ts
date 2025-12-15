@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { PRETEURS_CONNUS } from './preteurs_list';
 
 const app = express();
 const PORT = 3001;
@@ -377,15 +378,8 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
     const nsf_total = nsf_transactions_avec_compte.reduce((sum, t) => sum + t.frais, 0);
 
     // SECTION 7: Prêteurs
-    const PRETEURS_CONNUS = [
-        'zum rails', 'zumrail', 'vopay', 'money mart', 'cash money',
-        'prêt rapide', 'pret rapide', 'pret olympique', 'gmf', 'avenawise',
-        'gestion kronos', 'gestion prp', 'gestion k2', 'gestion',
-        'credit secours', 'alterfina', 'mdg', 'koho', 'klarna',
-        'neo capital', 'donovan finance', 'credit yamaska', 'scotiabank auto loan',
-        'freedomrepair', 'oxbridge', 'credit resources', 'easyfinancial',
-        'fairstone', 'cash store', 'money direct', 'progressive', 'rifco'
-    ];
+    // Liste complète importée depuis preteurs_list.ts (548 noms)
+    console.log(`[PRETEURS] Détection avec ${PRETEURS_CONNUS.length} noms de prêteurs`);
 
     const preteurs_transactions = transactions_90_avec_compte.filter(t => {
         // Vérifier si la transaction est exclue
