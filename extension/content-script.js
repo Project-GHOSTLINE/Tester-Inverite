@@ -205,10 +205,13 @@
       var rapportHTML = await uploadResponse.text();
       logToTerminal('[+] Rapport genere!', 'success');
 
-      // Ouvrir le rapport dans un nouvel onglet
-      var newWindow = window.open('', '_blank');
-      newWindow.document.write(rapportHTML);
-      newWindow.document.close();
+      // Ouvrir le rapport dans un nouvel onglet via Blob URL (évite les problèmes CSP)
+      var blob = new Blob([rapportHTML], { type: 'text/html' });
+      var blobURL = URL.createObjectURL(blob);
+      window.open(blobURL, '_blank');
+
+      // Révoquer l'URL après ouverture
+      setTimeout(function() { URL.revokeObjectURL(blobURL); }, 1000);
 
       logToTerminal('[+] Rapport ouvert dans nouvel onglet', 'success');
       return true;
