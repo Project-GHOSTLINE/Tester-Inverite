@@ -202,18 +202,17 @@
         throw new Error('Erreur generation rapport: ' + uploadResponse.status);
       }
 
-      var rapportHTML = await uploadResponse.text();
+      var result = await uploadResponse.json();
       logToTerminal('[+] Rapport genere!', 'success');
 
-      // Ouvrir le rapport dans un nouvel onglet via Blob URL (évite les problèmes CSP)
-      var blob = new Blob([rapportHTML], { type: 'text/html' });
-      var blobURL = URL.createObjectURL(blob);
-      window.open(blobURL, '_blank');
+      if (!result.success || !result.url) {
+        throw new Error('Reponse invalide du serveur');
+      }
 
-      // Révoquer l'URL après ouverture
-      setTimeout(function() { URL.revokeObjectURL(blobURL); }, 1000);
+      // Ouvrir le rapport directement depuis le serveur (évite les problèmes CSP)
+      window.open(result.url, '_blank');
 
-      logToTerminal('[+] Rapport ouvert dans nouvel onglet', 'success');
+      logToTerminal('[+] Rapport ouvert: ' + result.id.substring(0, 8) + '...', 'success');
       return true;
 
     } catch (error) {

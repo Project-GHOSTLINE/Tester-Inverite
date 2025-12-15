@@ -3,6 +3,7 @@ import multer from 'multer';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const app = express();
 const PORT = 3001;
@@ -12,6 +13,16 @@ const PORT = 3001;
 const EXCLUSIONS_FILE = process.env.VERCEL
     ? '/tmp/exclusions.json'
     : path.join(__dirname, 'exclusions.json');
+
+// Dossier pour les rapports temporaires
+const RAPPORTS_DIR = process.env.VERCEL
+    ? '/tmp/rapports'
+    : path.join(__dirname, 'rapports');
+
+// Créer le dossier s'il n'existe pas
+if (!fs.existsSync(RAPPORTS_DIR)) {
+    fs.mkdirSync(RAPPORTS_DIR, { recursive: true });
+}
 
 // Charger les exclusions
 function loadExclusions(): string[] {
@@ -1614,6 +1625,32 @@ app.post('/exclusion/remove', (req: Request, res: Response) => {
     }
 });
 
+// Route pour afficher un rapport sauvegardé
+app.get('/rapport/:id', (req: Request, res: Response) => {
+    try {
+        const rapportID = req.params.id;
+
+        // Valider l'ID (seulement hex)
+        if (!/^[a-f0-9]{32}$/.test(rapportID)) {
+            return res.status(400).send('ID de rapport invalide');
+        }
+
+        const rapportPath = path.join(RAPPORTS_DIR, `${rapportID}.html`);
+
+        if (!fs.existsSync(rapportPath)) {
+            return res.status(404).send('Rapport non trouvé');
+        }
+
+        // Lire et envoyer le rapport
+        const rapportHTML = fs.readFileSync(rapportPath, 'utf-8');
+        res.send(rapportHTML);
+
+    } catch (error: any) {
+        console.error('Erreur lecture rapport:', error);
+        res.status(500).send('Erreur lors de la lecture du rapport');
+    }
+});
+
 // Route pour traiter le fichier JSON
 app.post('/upload', upload.single('jsonFile'), (req: Request, res: Response) => {
     try {
@@ -1638,8 +1675,19 @@ app.post('/upload', upload.single('jsonFile'), (req: Request, res: Response) => 
         // Générer le rapport HTML
         const rapportHTML = genererRapportSimple(analyse, serverURL);
 
-        // Retourner le rapport
-        res.send(rapportHTML);
+        // Générer un ID unique pour le rapport
+        const rapportID = crypto.randomBytes(16).toString('hex');
+        const rapportPath = path.join(RAPPORTS_DIR, `${rapportID}.html`);
+
+        // Sauvegarder le rapport
+        fs.writeFileSync(rapportPath, rapportHTML);
+
+        // Retourner l'ID au lieu du HTML complet
+        res.json({
+            success: true,
+            id: rapportID,
+            url: `${serverURL}/rapport/${rapportID}`
+        });
 
     } catch (error: any) {
         console.error('Erreur lors du traitement:', error);
