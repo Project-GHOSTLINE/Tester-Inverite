@@ -1214,7 +1214,7 @@ function genererRapportSimple(analyse: any): string {
                         const detailsEncoded = Buffer.from(trans.details).toString('base64');
                         return `
                         <div class="preteur-item" style="padding: 12px; margin: 8px 0; background: #ffebee; border-left: 4px solid #d32f2f; position: relative;">
-                            <button class="exclude-btn" onclick="excludeTransaction('${detailsEncoded}', this)"
+                            <button class="exclude-btn" data-details="${detailsEncoded}"
                                     style="position: absolute; top: 10px; right: 10px; background: #d32f2f; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
                                 ❌ Enlever
                             </button>
@@ -1243,7 +1243,7 @@ function genererRapportSimple(analyse: any): string {
                         const detailsEncoded = Buffer.from(trans.details).toString('base64');
                         return `
                         <div class="preteur-item" style="padding: 12px; margin: 8px 0; background: #fff3e0; border-left: 4px solid #f57c00; position: relative;">
-                            <button class="exclude-btn" onclick="excludeTransaction('${detailsEncoded}', this)"
+                            <button class="exclude-btn" data-details="${detailsEncoded}"
                                     style="position: absolute; top: 10px; right: 10px; background: #f57c00; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">
                                 ❌ Enlever
                             </button>
@@ -1369,7 +1369,7 @@ function genererRapportSimple(analyse: any): string {
 
         <!-- Bouton pour voir les exclusions -->
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-            <button onclick="showExclusions()" style="background: #333; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+            <button id="show-exclusions-btn" style="background: #333; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
                 📋 Voir les exclusions (${loadExclusions().length})
             </button>
         </div>
@@ -1452,10 +1452,17 @@ function genererRapportSimple(analyse: any): string {
             }
         }
 
-        // Hover effect pour les boutons
+        // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            const buttons = document.querySelectorAll('.exclude-btn');
-            buttons.forEach(btn => {
+            // Boutons "Enlever"
+            const excludeButtons = document.querySelectorAll('.exclude-btn');
+            excludeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const detailsEncoded = this.getAttribute('data-details');
+                    excludeTransaction(detailsEncoded, this);
+                });
+
+                // Hover effect
                 btn.addEventListener('mouseenter', function() {
                     this.style.transform = 'scale(1.05)';
                 });
@@ -1463,6 +1470,12 @@ function genererRapportSimple(analyse: any): string {
                     this.style.transform = 'scale(1)';
                 });
             });
+
+            // Bouton "Voir les exclusions"
+            const showExclusionsBtn = document.getElementById('show-exclusions-btn');
+            if (showExclusionsBtn) {
+                showExclusionsBtn.addEventListener('click', showExclusions);
+            }
         });
     </script>
 </body>
