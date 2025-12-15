@@ -601,10 +601,20 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
 // ============================================================
 
 function genererDashboardReact(analyse: any, inveriteData: any, serverURL: string): string {
+    // Extraire les contacts
+    const email = inveriteData.contacts?.find((c: any) => c.type === 'email')?.contact || 'N/A';
+    const phone = inveriteData.contacts?.find((c: any) => c.type === 'phone')?.contact || 'N/A';
+
     // Préparer les données pour le dashboard React
     const dashboardData = {
         client: `${analyse.identite.prenom} ${analyse.identite.nom}`,
         reference: analyse.identite.reference_id,
+        email: email,
+        phone: phone,
+        address: inveriteData.address || 'N/A',
+        status: inveriteData.status || 'N/A',
+        verificationDate: inveriteData.complete_datetime || new Date().toISOString(),
+        comptes: analyse.comptes || [],
         date: new Date().toISOString(),
         transactions: analyse.transactions_90_jours || []
     };

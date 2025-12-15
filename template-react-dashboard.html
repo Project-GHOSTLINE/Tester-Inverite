@@ -323,6 +323,53 @@
                             </p>
                         </div>
 
+                        {/* Détails personnels */}
+                        <div className="bg-white rounded-xl shadow-xl p-6 mb-8 border-l-8 border-blue-500">
+                            <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <span className="text-blue-500">👤</span> Informations du client
+                            </h2>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">NOM COMPLET</div>
+                                        <div className="text-lg font-bold text-slate-800">{data.client}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">ID DE RÉFÉRENCE</div>
+                                        <div className="text-lg font-bold text-blue-600">{data.reference}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">📧 EMAIL</div>
+                                        <div className="text-base font-semibold text-slate-700">{data.email}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">📱 TÉLÉPHONE</div>
+                                        <div className="text-base font-semibold text-slate-700">{data.phone}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">🏠 ADRESSE</div>
+                                        <div className="text-base font-semibold text-slate-700">{data.address}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">✅ STATUT</div>
+                                        <div className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold text-sm">
+                                            {data.status}
+                                        </div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">📅 DATE DE VÉRIFICATION</div>
+                                        <div className="text-base font-semibold text-slate-700">{data.verificationDate}</div>
+                                    </div>
+                                    <div className="mb-4">
+                                        <div className="text-sm text-slate-500 font-semibold mb-1">💳 NOMBRE DE COMPTES</div>
+                                        <div className="text-2xl font-black text-blue-600">{data.comptes.length}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* 4 Cards horizontales */}
                         <div className="grid grid-cols-4 gap-6 mb-8">
                             {Object.entries(categories).map(([key, cat]) => {
