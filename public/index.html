@@ -164,12 +164,62 @@
         .error.show {
             display: block;
         }
+
+        .download-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .download-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .extension-title {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .extension-desc {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 Rapport Simple Inverite</h1>
         <p class="subtitle">Importez votre fichier JSON Inverite pour générer un rapport d'analyse</p>
+
+        <!-- Section téléchargement extension -->
+        <div class="download-section">
+            <div class="extension-title">🔌 Extension Chrome Inverite</div>
+            <div class="extension-desc">
+                Téléchargez l'extension pour générer des rapports directement depuis Inverite.com
+            </div>
+            <a href="/inverite-extension-v9.zip" download class="download-button">
+                ⬇️ Télécharger Extension v9.0
+            </a>
+        </div>
 
         <form id="uploadForm">
             <div class="upload-box" id="uploadBox">
@@ -280,12 +330,14 @@
                     throw new Error('Erreur lors de l\'analyse du fichier');
                 }
 
-                const html = await response.text();
+                const result = await response.json();
 
-                // Afficher le rapport dans une nouvelle fenêtre
-                const newWindow = window.open('', '_blank');
-                newWindow.document.write(html);
-                newWindow.document.close();
+                if (result.success && result.url) {
+                    // Ouvrir le rapport directement depuis le serveur
+                    window.open(result.url, '_blank');
+                } else {
+                    throw new Error('Réponse invalide du serveur');
+                }
 
                 // Réinitialiser le formulaire
                 resetForm();
