@@ -672,7 +672,10 @@ function genererDashboardReact(analyse: any, inveriteData: any, serverURL: strin
         verificationDate: inveriteData.complete_datetime || new Date().toISOString(),
         comptes: analyse.comptes || [],
         date: new Date().toISOString(),
-        transactions: analyse.transactions_90_jours || []
+        transactions: analyse.transactions_90_jours || [],
+        preteurs: analyse.preteurs || { groupes: [] },
+        nsf: analyse.nsf || { transactions: [], count: 0, total: 0 },
+        gambling: analyse.gambling || { transactions: [], count: 0, total: 0 }
     };
 
     // Lire le template React
