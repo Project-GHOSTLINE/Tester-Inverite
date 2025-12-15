@@ -1,26 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "Overwatch Rapport Simple",
-  "version": "8.0.0",
-  "description": "Extension Inverite/Margill/Flinks - Generation de rapports simples",
+  "name": "Inverite Rapport Simple",
+  "version": "9.0.0",
+  "description": "Extension Inverite - Generation de rapports simples",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
-    "http://localhost:3000/*",
-    "http://localhost:3001/*",
-    "https://dashboard.flinks.com/*",
     "*://inverite.com/*",
-    "*://*.inverite.com/*",
-    "https://argentrapide.margill.com/*",
-    "*://*.margill.com/*"
+    "*://*.inverite.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://dashboard.flinks.com/*",
         "*://inverite.com/*",
-        "*://*.inverite.com/*",
-        "https://argentrapide.margill.com/*",
-        "*://*.margill.com/*"
+        "*://*.inverite.com/*"
       ],
       "js": ["config.js", "content-script.js"],
       "run_at": "document_idle"

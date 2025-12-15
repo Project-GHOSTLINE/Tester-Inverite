@@ -3,5 +3,5 @@ var CONFIG = {
   INVERITE_API_KEY: '09a4b8554857d353fd007d29feca423f446',
   INVERITE_API_URL: 'https://www.inverite.com/api/verifications',
   RAPPORT_SERVER: 'https://rapportsimple-eh9shq1ex-project-ghostline.vercel.app',
-  VERSION: '7.1.0'
+  VERSION: '9.0.0'
 };
