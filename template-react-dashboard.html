@@ -77,6 +77,31 @@
                 _id: idx
             }));
 
+            // Fonction de détection de catégorie (DOIT être avant son utilisation!)
+            const isTransactionInCategory = (transaction, category) => {
+                switch(category) {
+                    case 'nsf':
+                        return transaction.details.toLowerCase().includes('nsf') ||
+                               transaction.details.toLowerCase().includes('insuffisance');
+                    case 'paie':
+                        return transaction.details.toLowerCase().includes('salaire') ||
+                               transaction.details.toLowerCase().includes('paie') ||
+                               transaction.details.toLowerCase().includes('payroll');
+                    case 'gambling':
+                        return transaction.details.toLowerCase().includes('loonio') ||
+                               transaction.details.toLowerCase().includes('payper') ||
+                               transaction.details.toLowerCase().includes('gigadat') ||
+                               transaction.category?.toLowerCase().includes('gambling');
+                    case 'preteur':
+                        return transaction.details.toLowerCase().includes('mdg') ||
+                               transaction.details.toLowerCase().includes('vopay') ||
+                               transaction.details.toLowerCase().includes('zumrail') ||
+                               transaction.details.toLowerCase().includes('fairstone');
+                    default:
+                        return false;
+                }
+            };
+
             const categories = {
                 nsf: {
                     label: 'NSF',
@@ -205,30 +230,6 @@
                     scrollToTransaction(currentTransactionId);
                 }
             }, [currentTransactionId]);
-
-            const isTransactionInCategory = (transaction, category) => {
-                switch(category) {
-                    case 'nsf':
-                        return transaction.details.toLowerCase().includes('nsf') ||
-                               transaction.details.toLowerCase().includes('insuffisance');
-                    case 'paie':
-                        return transaction.details.toLowerCase().includes('salaire') ||
-                               transaction.details.toLowerCase().includes('paie') ||
-                               transaction.details.toLowerCase().includes('payroll');
-                    case 'gambling':
-                        return transaction.details.toLowerCase().includes('loonio') ||
-                               transaction.details.toLowerCase().includes('payper') ||
-                               transaction.details.toLowerCase().includes('gigadat') ||
-                               transaction.category?.toLowerCase().includes('gambling');
-                    case 'preteur':
-                        return transaction.details.toLowerCase().includes('mdg') ||
-                               transaction.details.toLowerCase().includes('vopay') ||
-                               transaction.details.toLowerCase().includes('zumrail') ||
-                               transaction.details.toLowerCase().includes('fairstone');
-                    default:
-                        return false;
-                }
-            };
 
             const getStats = (category) => {
                 const filtered = transactionsWithId.filter(t => isTransactionInCategory(t, category));
