@@ -1390,7 +1390,7 @@ function genererRapportSimple(analyse: any): string {
             button.textContent = '⏳ Ajout...';
 
             try {
-                const response = await fetch('http://localhost:3001/exclusion/add', {
+                const response = await fetch('/exclusion/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1429,7 +1429,7 @@ function genererRapportSimple(analyse: any): string {
         // Fonction pour voir les exclusions
         async function showExclusions() {
             try {
-                const response = await fetch('http://localhost:3001/exclusion/list');
+                const response = await fetch('/exclusion/list');
                 const result = await response.json();
 
                 if (result.count === 0) {
