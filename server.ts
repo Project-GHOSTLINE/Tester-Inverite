@@ -393,9 +393,9 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
             return false;
         }
 
+        // SEULEMENT les prêteurs dans la liste - pas de catégorie "loan" automatique
         const details = t.details.toLowerCase();
-        const category = (t.category || '').toLowerCase();
-        return PRETEURS_CONNUS.some(p => details.includes(p)) || category.includes('loan');
+        return PRETEURS_CONNUS.some(p => details.includes(p));
     });
 
     // Séparer les paiements et les reçus
