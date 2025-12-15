@@ -313,6 +313,7 @@ export const PRETEURS_CONNUS = [
     'garage p. venne inc.',
     'gary gabriel marketing',
     'gervais auto inc.',
+    'gestion',
     'gestion & investissements cali inc.',
     'gestion 920',
     'gestion asc',
