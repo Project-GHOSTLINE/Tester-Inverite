@@ -113,10 +113,25 @@
                                transaction.details.toLowerCase().includes('gigadat') ||
                                transaction.category?.toLowerCase().includes('gambling');
                     case 'preteur':
-                        return transaction.details.toLowerCase().includes('mdg') ||
-                               transaction.details.toLowerCase().includes('vopay') ||
-                               transaction.details.toLowerCase().includes('zumrail') ||
-                               transaction.details.toLowerCase().includes('fairstone');
+                        const details = transaction.details.toLowerCase();
+                        const category = (transaction.category || '').toLowerCase();
+
+                        // Vérifier si c'est dans la liste des prêteurs connus
+                        const isPreteurKnown = details.includes('mdg') ||
+                                              details.includes('vopay') ||
+                                              details.includes('zumrail') ||
+                                              details.includes('fairstone') ||
+                                              details.includes('easyfinancial') ||
+                                              details.includes('iceberg') ||
+                                              details.includes('money mart') ||
+                                              details.includes('cash money') ||
+                                              details.includes('prêt rapide') ||
+                                              details.includes('pret rapide');
+
+                        // OU vérifier si la catégorie contient "loans"
+                        const isLoanCategory = category.includes('loans') || category.includes('loan');
+
+                        return isPreteurKnown || isLoanCategory;
                     default:
                         return false;
                 }
