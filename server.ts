@@ -1546,6 +1546,12 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
 // ROUTES
 // ============================================================
 
+// Route pour télécharger l'extension
+app.get('/inverite-extension-v9.zip', (req: Request, res: Response) => {
+    const zipPath = path.join(__dirname, 'public', 'inverite-extension-v9.zip');
+    res.download(zipPath, 'inverite-extension-v9.zip');
+});
+
 // Route principale
 app.get('/', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
