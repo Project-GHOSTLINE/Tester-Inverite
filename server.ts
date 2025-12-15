@@ -576,7 +576,23 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
             count_total: preteurs_transactions.length
         },
         categories: categories_depenses,
-        toutes_transactions: transactionsParCategorie
+        toutes_transactions: transactionsParCategorie,
+        transactions_90_jours: transactions_90_avec_compte
+            .map(t => ({
+                date: t.date,
+                details: t.details,
+                debit: t.debit,
+                credit: t.credit,
+                category: t.category,
+                balance: t.balance,
+                compte_numero: t.compteInfo.numero,
+                compte_type: t.compteInfo.type,
+                compte_institution: t.compteInfo.institution,
+                compte_account: t.compteInfo.account,
+                compte_transit: t.compteInfo.transit,
+                compte_banque: t.compteInfo.banque
+            }))
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     };
 }
 
@@ -1305,105 +1321,51 @@ function genererRapportSimple(analyse: any, serverURL: string): string {
             ` : ''}
         </div>
 
-        <!-- SECTION 8: TOUTES LES TRANSACTIONS PAR CATÉGORIE -->
+        <!-- SECTION 8: TOUTES LES TRANSACTIONS (90 DERNIERS JOURS) -->
         <div class="section">
-            <div class="section-title">8. TOUTES LES TRANSACTIONS PAR CATÉGORIE</div>
+            <div class="section-title">8. TOUTES LES TRANSACTIONS - 90 DERNIERS JOURS</div>
 
-            <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-                <strong style="color: #1976d2;">📋 Cliquez sur une catégorie pour voir toutes les transactions</strong>
+            <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; text-align: center;">
+                <strong style="color: #1976d2; font-size: 18px;">
+                    📋 ${analyse.transactions_90_jours.length} transactions au total
+                </strong>
             </div>
 
-            ${analyse.toutes_transactions ? Object.keys(analyse.toutes_transactions).sort((a, b) => {
-                const totalA = analyse.toutes_transactions[a].reduce((sum: number, t: any) => sum + parseFloat(t.debit || '0'), 0);
-                const totalB = analyse.toutes_transactions[b].reduce((sum: number, t: any) => sum + parseFloat(t.debit || '0'), 0);
-                return totalB - totalA;
-            }).map((categoryKey: string) => {
-                const transactions = analyse.toutes_transactions[categoryKey];
-                const totalDebits = transactions.reduce((sum: number, t: any) => sum + parseFloat(t.debit || '0'), 0);
-                const totalCredits = transactions.reduce((sum: number, t: any) => sum + parseFloat(t.credit || '0'), 0);
-                const count = transactions.length;
-
-                // Mapper les catégories aux icônes et labels
-                const categoryInfo: any = {
-                    'bills_and_utilities': { icone: '⚡', libelle: 'Factures & Services publics', type: 'essentielle' },
-                    'auto_and_transport': { icone: '🚗', libelle: 'Transport & Automobile', type: 'essentielle' },
-                    'insurance': { icone: '🛡️', libelle: 'Assurances', type: 'essentielle' },
-                    'health_and_fitness': { icone: '💪', libelle: 'Santé & Fitness', type: 'essentielle' },
-                    'food_and_dining': { icone: '🍔', libelle: 'Alimentation & Restaurants', type: 'essentielle' },
-                    'home': { icone: '🏠', libelle: 'Maison', type: 'essentielle' },
-                    'entertainment': { icone: '🎬', libelle: 'Divertissement', type: 'non-essentielle' },
-                    'shopping': { icone: '🛍️', libelle: 'Achats', type: 'non-essentielle' },
-                    'travel': { icone: '✈️', libelle: 'Voyages', type: 'non-essentielle' },
-                    'business_services': { icone: '💼', libelle: 'Services professionnels', type: 'autre' },
-                    'fees_and_charges': { icone: '💳', libelle: 'Frais bancaires', type: 'autre' },
-                    'transfer': { icone: '💸', libelle: 'Transferts', type: 'autre' },
-                    'education': { icone: '📚', libelle: 'Éducation', type: 'autre' },
-                    'income': { icone: '💰', libelle: 'Revenus', type: 'autre' },
-                    'gambling': { icone: '🎰', libelle: 'Gambling', type: 'autre' },
-                    'non_classifie': { icone: '❓', libelle: 'Non classifié', type: 'autre' }
-                };
-
-                const catInfo = categoryInfo[categoryKey] || { icone: '📂', libelle: categoryKey, type: 'autre' };
-                const bgColor = catInfo.type === 'essentielle' ? '#fff3e0' : catInfo.type === 'non-essentielle' ? '#e3f2fd' : '#f5f5f5';
-                const borderColor = catInfo.type === 'essentielle' ? '#f57c00' : catInfo.type === 'non-essentielle' ? '#1976d2' : '#666';
+            ${analyse.transactions_90_jours.map((trans: any, idx: number) => {
+                const isDebit = trans.debit && trans.debit !== '';
+                const montant = isDebit ? parseFloat(trans.debit) : parseFloat(trans.credit || '0');
+                const typeColor = isDebit ? '#d32f2f' : '#388e3c';
+                const typeBg = isDebit ? '#ffebee' : '#e8f5e9';
+                const typeLabel = isDebit ? 'DÉBIT' : 'CRÉDIT';
 
                 return `
-                    <details style="margin-bottom: 15px; border: 1px solid ${borderColor}; border-radius: 8px; overflow: hidden;">
-                        <summary style="
-                            padding: 15px;
-                            background: ${bgColor};
-                            cursor: pointer;
-                            font-weight: bold;
-                            font-size: 16px;
-                            color: #333;
-                            user-select: none;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            transition: background 0.2s;
-                        " onmouseover="this.style.background='${bgColor === '#fff3e0' ? '#ffe0b2' : bgColor === '#e3f2fd' ? '#bbdefb' : '#e0e0e0'}'" onmouseout="this.style.background='${bgColor}'">
-                            <span>${catInfo.icone} ${catInfo.libelle}</span>
-                            <span style="font-size: 14px; color: #666;">
-                                ${count} transaction${count > 1 ? 's' : ''} |
-                                ${totalDebits > 0 ? '<span style="color: #d32f2f;">-' + totalDebits.toFixed(2) + '$</span>' : ''}
-                                ${totalCredits > 0 ? '<span style="color: #388e3c;">+' + totalCredits.toFixed(2) + '$</span>' : ''}
-                            </span>
-                        </summary>
-
-                        <div style="padding: 15px; background: white;">
-                            ${transactions.map((trans: any, idx: number) => {
-                                const isDebit = trans.debit && trans.debit !== '';
-                                const montant = isDebit ? parseFloat(trans.debit) : parseFloat(trans.credit || '0');
-                                const typeColor = isDebit ? '#d32f2f' : '#388e3c';
-                                const typeBg = isDebit ? '#ffebee' : '#e8f5e9';
-
-                                return `
-                                    <div style="padding: 10px; margin: 8px 0; background: ${typeBg}; border-left: 3px solid ${typeColor}; border-radius: 4px;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                            <strong style="color: ${typeColor}; font-size: 13px;">
-                                                #${idx + 1} - ${trans.date}
-                                            </strong>
-                                            <strong style="color: ${typeColor}; font-size: 15px;">
-                                                ${isDebit ? '-' : '+'}${montant.toFixed(2)}$
-                                            </strong>
-                                        </div>
-                                        <div style="font-size: 12px; color: #333; margin: 5px 0;">
-                                            ${trans.details}
-                                        </div>
-                                        <div style="font-size: 10px; color: #888; margin-top: 5px; padding-top: 5px; border-top: 1px solid #e0e0e0;">
-                                            📂 ${trans.category || 'Non classifié'}
-                                        </div>
-                                        <div style="font-size: 10px; color: #666; margin-top: 3px;">
-                                            💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
-                                        </div>
-                                        ${trans.balance ? '<div style="font-size: 10px; color: #999; margin-top: 2px;">💰 Balance après: ' + parseFloat(trans.balance).toFixed(2) + '$</div>' : ''}
-                                    </div>
-                                `;
-                            }).join('')}
+                    <div style="padding: 12px; margin: 10px 0; background: ${typeBg}; border-left: 4px solid ${typeColor}; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color: #333; font-size: 14px;">#${idx + 1}</strong>
+                                <span style="color: #666; font-size: 13px; margin-left: 10px;">📅 ${trans.date}</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: ${typeColor}; font-size: 18px; font-weight: bold;">
+                                    ${isDebit ? '-' : '+'}${montant.toFixed(2)}$
+                                </div>
+                                <div style="font-size: 10px; color: ${typeColor}; font-weight: bold; margin-top: 2px;">
+                                    ${typeLabel}
+                                </div>
+                            </div>
                         </div>
-                    </details>
+                        <div style="font-size: 13px; color: #333; margin: 8px 0; line-height: 1.4;">
+                            📝 ${trans.details}
+                        </div>
+                        <div style="font-size: 11px; color: #888; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e0e0e0;">
+                            📂 <strong>Catégorie:</strong> ${trans.category || 'Non classifié'}
+                        </div>
+                        <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                            💳 Compte ${trans.compte_numero} (${trans.compte_type}) | ${trans.compte_banque} (${trans.compte_institution}) | No: ${trans.compte_account} | Transit: ${trans.compte_transit}
+                        </div>
+                    </div>
                 `;
-            }).join('') : '<p>Aucune transaction disponible</p>'}
+            }).join('')}
         </div>
 
         <a href="/" class="back-button">← Analyser un autre fichier</a>
