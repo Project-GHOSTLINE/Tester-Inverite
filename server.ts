@@ -566,7 +566,7 @@ function analyseInverite(data: InveriteData, exclusions: string[] = []) {
 // GÉNÉRATION DU RAPPORT HTML SIMPLE
 // ============================================================
 
-function genererRapportSimple(analyse: any): string {
+function genererRapportSimple(analyse: any, serverURL: string): string {
     return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1376,6 +1376,9 @@ function genererRapportSimple(analyse: any): string {
     </div>
 
     <script>
+        // URL du serveur (injectée depuis le backend)
+        const SERVER_URL = '${serverURL}';
+
         // Fonction pour exclure une transaction
         async function excludeTransaction(detailsEncoded, button) {
             const details = atob(detailsEncoded);
@@ -1393,7 +1396,7 @@ function genererRapportSimple(analyse: any): string {
             button.textContent = '⏳ Ajout...';
 
             try {
-                const response = await fetch('/exclusion/add', {
+                const response = await fetch(SERVER_URL + '/exclusion/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1432,7 +1435,7 @@ function genererRapportSimple(analyse: any): string {
         // Fonction pour voir les exclusions
         async function showExclusions() {
             try {
-                const response = await fetch('/exclusion/list');
+                const response = await fetch(SERVER_URL + '/exclusion/list');
                 const result = await response.json();
 
                 if (result.count === 0) {
@@ -1628,8 +1631,11 @@ app.post('/upload', upload.single('jsonFile'), (req: Request, res: Response) => 
         // Analyser le JSON
         const analyse = analyseInverite(inveriteData, exclusions);
 
+        // Construire l'URL du serveur
+        const serverURL = `${req.protocol}://${req.get('host')}`;
+
         // Générer le rapport HTML
-        const rapportHTML = genererRapportSimple(analyse);
+        const rapportHTML = genererRapportSimple(analyse, serverURL);
 
         // Retourner le rapport
         res.send(rapportHTML);
